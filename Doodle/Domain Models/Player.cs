@@ -9,13 +9,17 @@ namespace Doodle.Domain_Models
     {
         public String PlayerID;
 
-        public String ImagePath = "";
+        public String ImagePath;
 
         public String Name;
+
+        public int PercentageMatch;
 
         public int TermVotes = 2;
 
         public int JudgingVotes = 1;
+
+        public String ConnectionID;
 
         public Player()
         {

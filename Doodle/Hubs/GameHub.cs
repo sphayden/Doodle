@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Timers;
 using System.Web;
 using Doodle.Domain_Models;
+using Doodle.Utility;
 using Microsoft.AspNet.SignalR;
 
 namespace Doodle.Hubs
@@ -30,10 +34,23 @@ namespace Doodle.Hubs
                     Lobby.Timer.Elapsed += LobbyTimerElapsed;
                     Lobby.Timer.Start();
                 }
+                else if (Lobby.Players.Count == 3)
+                {
+                    Lobby.Timer.Stop();
+                    Lobby.Timer.Start();
+                }
                 else if (Lobby.Players.Count == 4)
                 {
-
+                    Lobby.Timer.Interval = 10000;
+                    Lobby.Timer.Start();
                 }
+                else if (Lobby.Players.Count != 1)
+                {
+                    return;
+                }
+
+                Groups.Add(Context.ConnectionId, "Lobby");
+                p.ConnectionID = Context.ConnectionId;
 
                 Clients.Caller.setTerms(Lobby.Terms);
 
@@ -45,7 +62,6 @@ namespace Doodle.Hubs
         {
             Lobby.Timer.Stop();
             StartGame();
-            Clients.All.startGame();
         }
 
         void StartGame()
@@ -54,8 +70,50 @@ namespace Doodle.Hubs
             game.Term = Lobby.Terms.OrderBy(t => t.Value).First().Key;
             game.Players.AddRange(Lobby.Players);
 
-            Lobby.Players.Clear();
-            Lobby.ResetTerms();
+            Lobby.Players.ForEach(p => Groups.Remove(p.ConnectionID, "Lobby"));
+            Lobby.Players.ForEach(p => Groups.Add(p.ConnectionID, game.GameID));
+
+            Games.Add(game);
+
+            game.Timer.Elapsed += GameTimerElapsed;
+            game.Timer.Start();
+
+            Lobby = new Lobby();
+
+            Clients.Group(game.GameID).startGame();
+        }
+
+        void GameTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Game game = Games.Find(g => g.GameID == (sender as GameTimer).GameID);
+
+            game.Timer.Stop();
+
+            game.ImageTimer.Elapsed += ImageTimerElapsed;
+            game.ImageTimer.Start();
+
+            Clients.Group(game.GameID).endGame();
+        }
+
+        void ImageTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Game game = Games.Find(g => g.GameID == (sender as GameTimer).GameID);
+
+            game.ImageTimer.Stop();
+
+            game.Players.FindAll(p => p.ImagePath == null).ForEach(p => Groups.Remove(p.ConnectionID, game.GameID));
+            game.Players.RemoveAll(p => p.ImagePath == null);
+
+            //game.Players.ForEach(p => p.PercentageMatch = getPercentageMatch(game.Term, p.ImagePath));
+
+            if (game.Players.Count > 2)
+            {
+                Clients.Group(game.GameID).chooseJudgement();
+            }
+            else
+            {
+                Clients.Group(game.GameID).displayAIWinner();
+            }
         }
 
         public void VoteTerm(String playerID, String term)

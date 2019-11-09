@@ -39,7 +39,13 @@ namespace Doodle
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                  "~/Content/bootstrap.css",
-                 "~/Content/Site.css"));
+                 "~/Content/Site.min.css",
+                 "~/Content/Title.min.css",
+                 "~/Content/Lobby.min.css",
+                 "~/Content/Game.min.css",
+                 "~/Content/Judging.min.css",
+                 "~/Content/Win.min.css"
+                 ));
         }
     }
 }

@@ -1,82 +1,210 @@
-﻿<!-- ko with: home -->
-<div class="jumbotron">
-    <h1>ASP.NET</h1>
-    <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS, and JavaScript.</p>
-    <p><a href="https://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
-</div>
-<div class="row">
-    <div class="col-md-4">
-        <h2>Your information</h2>
-        <p>This section shows how you can call ASP.NET Web API to get the user details.</p>
-        <p data-bind="text: myHometown"></p>
-
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=273732">Learn more &raquo;</a></p>
+﻿<div id="app">
+    <div id="PlayerID" class="hidden">@ViewBag.PlayerID</div>
+    <div id="CoreCarousel" class="carousel carousel-fade">
+        <div class="carousel-inner">
+            <div id="StartScreen" :class="{'carousel-item': true, active: startActive}">
+                <div class="container-fluid" style="height:100vh">
+                    <div class="row align-items-center" style="height:100vh">
+                        <div class="col text-center">
+                            <div class="row">
+                                <div class="col text-center">
+                                    <h1>Doodle Bash</h1>
+                                    <h3>Compete with your friends for the best doodle</h3>
+                                    <br /><br />
+                                </div>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="col-lg-3">
+                                    <input class="form-control form-control-lg" v-model="playerName" type="text" placeholder="Name">
+                                    <br />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <button type="button" v-on:click="start" class="btn btn-lg btn-outline-secondary">START GAME</button>
+                                    <br />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="LobbyScreen" :class="{'carousel-item': true, active: lobbyActive}">
+                <div class="container-fluid" style="height:100vh">
+                    {{lobbyCountDown}}
+                    <div class="row align-items-center" style="height:100vh">
+                        <div class="col text-center">
+                            <div class="row">
+                                <div class="col text-center">
+                                    <div id="Players" v-for="player in lobbyPlayers">
+                                        <h1>{{player}}</h1>
+                                    </div>
+                                </div>
+                                <div class="col text-center">
+                                    <transition-group name="flip-list" tag="div">
+                                        <div id="Terms" v-for="term in lobbyTermsList" :key="term.term">
+                                            <h1>{{term.term}}</h1>
+                                            <h1>{{term.votes}}</h1>
+                                            <button type="button" v-on:click="voteTerm(term.term)" class="btn btn-outline-secondary" :class="{hidden: showVoteButtons }">Vote</button>
+                                        </div>
+                                    </transition-group>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="GameScreen" :class="{'carousel-item': true, active: gameActive}">
+                <div class="container-fluid" style="height:100vh">
+                    <div class="row align-items-center" style="height:100vh">
+                        <div class="col text-center">
+                            <div class="row">
+                                <div class="col text-center">
+                                    Game Started
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="col-md-4">
-        <h2>Getting started</h2>
-        <p>
-            ASP.NET Single Page Application (SPA) helps you build applications that include significant client-side interactions using HTML, CSS, and JavaScript.
-            It's now easier than ever before to getting started writing highly interactive web applications.
-        </p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=273732">Learn more &raquo;</a></p>
-    </div>
-
-    <div class="col-md-4">
-        <h2>Web Hosting</h2>
-        <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-    </div>
 </div>
 
-<style type="text/css">
-    .container {
-        background-color: #99CCFF;
-        border: thick solid #808080;
-        padding: 20px;
-        margin: 20px;
-    }
-</style>
-
-<div class="container">
-    <input type="text" id="message" />
-    <input type="button" id="sendmessage" value="Send" />
-    <input type="hidden" id="displayname" />
-    <ul id="discussion"></ul>
-</div>
-<!--Script references. -->
-<!--Reference the SignalR library. -->
-<script src="/Scripts/jquery.signalR-2.2.2.min.js"></script>
-<!--Reference the autogenerated SignalR hub script. -->
-<script src="/signalr/hubs"></script>
 <!--Add script to update the page and send messages.-->
 <script type="text/javascript">
-        $(function () {
-            // Declare a proxy to reference the hub.
-            var chat = $.connection.testHub;
-            // Create a function that the hub can call to broadcast messages.
-            chat.client.broadcastMessage = function (name, message) {
-                // Html encode display name and message.
-                var encodedName = $('<div />').text(name).html();
-                var encodedMsg = $('<div />').text(message).html();
-                // Add the message to the page.
-                $('#discussion').append('<li><strong>' + encodedName
-                    + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
-            };
-            // Get the user name and store it to prepend to messages.
-            $('#displayname').val(prompt('Enter your name:', ''));
-            // Set initial focus to message input box.
-            $('#message').focus();
-            // Start the connection.
-            $.connection.hub.start().done(function () {
-                $('#sendmessage').click(function () {
-                    // Call the Send method on the hub.
-                    chat.server.send($('#displayname').val(), $('#message').val());
-                    // Clear text box and reset focus for next comment.
-                    $('#message').val('').focus();
-                });
-            });
+
+    var VUE;
+
+    $(function () {
+        VUE = new Vue({
+            el: '#app',
+            data: {
+                gameConnection: $.connection.gameHub,
+                coreCarousel: $('#CoreCarousel').carousel({
+                    interval: false,
+                }),
+                playerID: $("#PlayerID").text(),
+                playerName: "",
+                startActive: true,
+                lobbyActive: false,
+                gameActive: false,
+                lobbyPlayers: [],
+                lobbyTerms: [],
+                termVotes: 2,
+                lobbyCountDown: 30
+            },
+
+            computed: {
+                lobbyTermsList: function ()
+                {
+                    var keys = Object.keys(this.lobbyTerms);
+                    var terms = [];
+
+                    keys.forEach(function (term)
+                    {
+                        terms.push(
+                            {
+                                term: term,
+                                votes: VUE.lobbyTerms[term]
+                            }
+                        )
+                    });
+
+                    return _.orderBy(terms, 'votes');
+                },
+                showVoteButtons: function ()
+                {
+                    return this.termVotes == 0;
+                }
+            },
+
+            methods: {
+                start: function ()
+                {
+                    if (this.playerName != "") 
+                    {
+                        this.gameConnection.server.addPlayerToLobby(this.playerID, this.playerName);
+                        this.startActive = false;
+                        this.lobbyActive = true;
+                    }
+                    else
+                    {
+                        alert("Empty Name");
+                    }
+                },
+                voteTerm: function (term)
+                {
+                    if (this.termVotes > 0)
+                    {
+                        this.termVotes--;
+                        this.gameConnection.server.voteTerm(this.playerID, term);
+                    }
+                },
+                startLobbyTimer: function ()
+                {
+                    if (this.lobbyCountDown > 0) {
+                        this.lobbyCountDown--;
+                        setTimeout(this.startLobbyTimer, 1000);
+                    }
+                }
+
+            },
+
+            created: function () {
+
+                this.gameConnection.client.playerAddedToLobby = function (names) {
+                    VUE.lobbyPlayers = names;  
+
+                    if (names.length == 2)
+                    {
+                        VUE.startLobbyTimer();
+                    }
+                }
+
+                this.gameConnection.client.startGame = function () {
+                    VUE.lobbyActive = false;
+                    VUE.gameActive = true;
+                }
+
+                this.gameConnection.client.setTerms = function (terms) {
+                    VUE.lobbyTerms = terms;
+                }
+
+                this.gameConnection.client.votedTerm = function (term, voteCount) {
+                    VUE.lobbyTerms[term] = voteCount;
+                }
+
+                $.connection.hub.start();
+                
+                //gameConnection.client.broadcastMessage = function (name, message) {
+                    
+                //    var encodedName = $('<div />').text(name).html();
+                //    var encodedMsg = $('<div />').text(message).html();
+                   
+                //    $('#discussion').append('<li><strong>' + encodedName
+                //        + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
+                //};
+               
+                //$('#displayname').val(prompt('Enter your name:', ''));
+               
+                //$('#message').focus();
+               
+                //$.connection.hub.start().done(function () {
+                //    $('#sendmessage').click(function () {
+                        
+                //        gameConnection.server.send($('#displayname').val(), $('#message').val());
+                        
+                //        $('#message').val('').focus();
+                //    });
+                //});
+
+            }
         });
+
+
+
+    });
 </script>
 
 <!-- /ko -->

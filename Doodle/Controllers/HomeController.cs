@@ -51,6 +51,7 @@ namespace Doodle.Controllers
                 if (p != null)
                 {
                     p.ImagePath = "/Images/Temp/" + filename;
+                    p.ImageFullPath = path;
                 }
             });
 

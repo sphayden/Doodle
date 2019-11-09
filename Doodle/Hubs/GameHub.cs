@@ -67,7 +67,7 @@ namespace Doodle.Hubs
         void StartGame()
         {
             Game game = new Game();
-            game.Term = Lobby.Terms.OrderBy(t => t.Value).First().Key;
+            game.Term = Lobby.Terms.OrderByDescending(t => t.Value).First().Key;
             game.Players.AddRange(Lobby.Players);
 
             Lobby.Players.ForEach(p => Groups.Remove(p.ConnectionID, "Lobby"));
@@ -80,7 +80,7 @@ namespace Doodle.Hubs
 
             Lobby = new Lobby();
 
-            Clients.Group(game.GameID).startGame();
+            Clients.Group(game.GameID).startGame(game.Term);
         }
 
         void GameTimerElapsed(object sender, ElapsedEventArgs e)
@@ -104,16 +104,143 @@ namespace Doodle.Hubs
             game.Players.FindAll(p => p.ImagePath == null).ForEach(p => Groups.Remove(p.ConnectionID, game.GameID));
             game.Players.RemoveAll(p => p.ImagePath == null);
 
-            //game.Players.ForEach(p => p.PercentageMatch = getPercentageMatch(game.Term, p.ImagePath));
+            game.Players.ForEach(p => p.PercentageMatch = GetPercentageMatch(game.Term, p.ImageFullPath));
 
             if (game.Players.Count > 2)
             {
+                game.JudgementTimer.Elapsed += JudgementTimerElapsed;
+                game.JudgementTimer.Start();
                 Clients.Group(game.GameID).chooseJudgement();
             }
             else
             {
-                Clients.Group(game.GameID).displayAIWinner();
+                Clients.Group(game.GameID).displayAIWinner(
+                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
             }
+        }
+
+        void JudgementTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Game game = Games.Find(g => g.GameID == (sender as GameTimer).GameID);
+
+            game.JudgementTimer.Stop();
+
+            if (game.AIVotes > game.PeerVotes)
+            {
+                Clients.Group(game.GameID).displayAIWinner(
+                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
+            }
+            else if (game.AIVotes < game.PeerVotes)
+            {
+                game.VoteTimer.Elapsed += VotingTimerElapsed;
+                game.VoteTimer.Start();
+                Clients.Group(game.GameID).voteOnWinner(game.Players);
+            }
+            else
+            {
+                Random ran = new Random();
+                int ranInt = ran.Next(2);
+
+                if (ranInt == 0)
+                {
+                    Clients.Group(game.GameID).displayAIWinner(
+                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
+                }
+                else if (ranInt == 1)
+                {
+                    game.VoteTimer.Elapsed += VotingTimerElapsed;
+                    game.VoteTimer.Start();
+                    Clients.Group(game.GameID).voteOnWinner(game.Players);
+                }
+            }
+        }
+
+        void VotingTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Game game = Games.Find(g => g.GameID == (sender as GameTimer).GameID);
+
+            game.VoteTimer.Stop();
+
+            int highestVotes = game.Players.OrderByDescending(p => p.Votes).First().Votes;
+
+            List<Player> topPlayers = game.Players.FindAll(p => p.Votes == highestVotes).ToList();
+
+            if (topPlayers.Count > 1)
+            {
+                Clients.Group(game.GameID).displayAIWinner(
+                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
+            }
+            else
+            {
+                Clients.Group(game.GameID).displayWinner(
+                       topPlayers.First()
+                   );
+            }
+        }
+
+        private int GetPercentageMatch(string term, string imagePath)
+        {
+            return Convert.ToInt32(GoogleVisionApiData.GetImageData(term, imagePath) * 100);
+        }
+
+        public void VotePlayer(String playerID, String playerName)
+        {
+            Games.ForEach(g =>
+            {
+                Player p = g.Players.Find(p1 => p1.PlayerID == playerID);
+
+                if (p != null)
+                {
+                    if (p.PlayerVotes > 0)
+                    {
+                        Player votingFor = g.Players.Find(p1 => p1.Name == playerName);
+                        votingFor.Votes += (p.PlayerVotes / 2);
+                        p.PlayerVotes--;
+                    }
+                }
+            });
+        }
+
+        public void VoteAIJudgement(String playerID)
+        {
+            Games.ForEach(g =>
+            {
+                Player p = g.Players.Find(p1 => p1.PlayerID == playerID);
+
+                if (p != null)
+                {
+                    if (p.JudgingVotes > 0)
+                    {
+                        p.JudgingVotes--;
+                        g.AIVotes++;
+                    }
+                }
+            });
+        }
+
+        public void VotePeerJudgement(String playerID)
+        {
+            Games.ForEach(g =>
+            {
+                Player p = g.Players.Find(p1 => p1.PlayerID == playerID);
+
+                if (p != null)
+                {
+                    if (p.JudgingVotes > 0)
+                    {
+                        p.JudgingVotes--;
+                        g.PeerVotes++;
+                    }
+                }
+            });
         }
 
         public void VoteTerm(String playerID, String term)

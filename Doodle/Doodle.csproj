@@ -349,6 +349,11 @@
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\ApiGroup.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\Api.cshtml" />
     <Content Include="Content\Site.scss" />
+    <Content Include="Content\Title.scss" />
+    <Content Include="Content\Lobby.scss" />
+    <Content Include="Content\Game.scss" />
+    <Content Include="Content\Judging.scss" />
+    <Content Include="Content\Win.scss" />
     <None Include="Scripts\jquery-3.3.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.3.1.js" />
     <Content Include="Scripts\jquery-3.3.1.min.js" />

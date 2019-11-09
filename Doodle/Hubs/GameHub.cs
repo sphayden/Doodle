@@ -61,17 +61,21 @@ namespace Doodle.Hubs
         void LobbyTimerElapsed(object sender, ElapsedEventArgs e)
         {
             Lobby.Timer.Stop();
-            StartGame();
+            StartGameAsync();
         }
 
-        void StartGame()
+        async System.Threading.Tasks.Task StartGameAsync()
         {
             Game game = new Game();
             game.Term = Lobby.Terms.OrderByDescending(t => t.Value).First().Key;
             game.Players.AddRange(Lobby.Players);
 
             Lobby.Players.ForEach(p => Groups.Remove(p.ConnectionID, "Lobby"));
-            Lobby.Players.ForEach(p => Groups.Add(p.ConnectionID, game.GameID));
+
+            foreach (Player p in Lobby.Players)
+            {
+                await Groups.Add(p.ConnectionID, game.GameID);
+            }
 
             Games.Add(game);
 

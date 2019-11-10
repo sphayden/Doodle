@@ -75,8 +75,9 @@
 
                                     </ul>
                                 </div>
-                        </div>
+                            </div>
 
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,77 +85,79 @@
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
-                            <div class="row">
+                            <div class="row fixed-top">
                                 <div class="col text-center">
-                                    <h1>{{gameCountDown}}</h1>
-                                    <h1>{{term}}</h1>
+                                    <h2>Time Remaining: <strong><span class="h1" :class="gameCountDownStyle">{{gameCountDown}}</span></strong></h2>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="col text-center" style="top: -30px;padding-right: 0;padding-left: 0;">
-                                    <div class="canvas-wrapper">
-                                        <canvas id="canvas"></canvas>
-                                        <div class="cursor" id="cursor"></div>
-                                        <div class="controls">
-                                            <div class="btn-row">
-                                                <button type="button"
-                                                        v-on:click="removeAllHistory"
-                                                        v-bind:class="{ disabled: !history.length }" title="Clear all">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-
-                                            <div class="btn-row">
-                                                <button title="Pick a brush size"
-                                                        v-on:click="popups.showSize = !popups.showSize"
-                                                        v-bind:class="{ active: popups.showSize }">
-                                                    <i class="fas fa-circle"></i>
-                                                    <span class="size-icon">
-                                                        {{ size }}
-                                                    </span>
-                                                </button>
-
-                                                <div class="popup shadow-lg" v-if="popups.showSize">
-                                                    <div class="popup-title">
-                                                        Brush size
-                                                    </div>
-                                                    <label v-for="sizeItem in sizes" class="size-item">
-                                                        <input type="radio" name="size" v-model="size" v-bind:value="sizeItem">
-                                                        <span class="size"
-                                                              v-bind:style="{width: sizeItem + 'px', height: sizeItem + 'px'}"></span>
-                                                    </label>
+                                <div class="col text-center">
+                                    <h1>Term: <strong class="h1">{{term}}</strong></h1>
+                                </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col text-center" style="top: -30px;padding-right: 0;padding-left: 0;">
+                                        <div class="canvas-wrapper">
+                                            <canvas id="canvas"></canvas>
+                                            <div class="cursor" id="cursor"></div>
+                                            <div class="controls">
+                                                <div class="btn-row">
+                                                    <button type="button"
+                                                            v-on:click="removeAllHistory"
+                                                            v-bind:class="{ disabled: !history.length }" title="Clear all">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </div>
-                                            </div>
 
-                                            <div class="btn-row">
-                                                <button title="Pick a color"
-                                                        v-on:click="popups.showColor = !popups.showColor"
-                                                        v-bind:class="{ active: popups.showColor }">
-                                                    <i class="fas fa-palette"></i>
-                                                    <span class="color-icon"
-                                                          v-bind:style="{backgroundColor: color}">
-                                                    </span>
-                                                </button>
+                                                <div class="btn-row">
+                                                    <button title="Pick a brush size"
+                                                            v-on:click="popups.showSize = !popups.showSize"
+                                                            v-bind:class="{ active: popups.showSize }">
+                                                        <i class="fas fa-circle"></i>
+                                                        <span class="size-icon">
+                                                            {{ size }}
+                                                        </span>
+                                                    </button>
 
-                                                <div class="popup shadow-lg" v-if="popups.showColor">
-                                                    <div class="popup-title">
-                                                        Brush color
+                                                    <div class="popup shadow-lg" v-if="popups.showSize">
+                                                        <div class="popup-title">
+                                                            Brush size
+                                                        </div>
+                                                        <label v-for="sizeItem in sizes" class="size-item">
+                                                            <input type="radio" name="size" v-model="size" v-bind:value="sizeItem">
+                                                            <span class="size"
+                                                                  v-bind:style="{width: sizeItem + 'px', height: sizeItem + 'px'}"></span>
+                                                        </label>
                                                     </div>
-                                                    <label v-for="colorItem in colors" class="color-item">
-                                                        <input type="radio"
-                                                               name="color"
-                                                               v-model="color"
-                                                               v-bind:value="colorItem">
-                                                        <span v-bind:class="'color color-' + colorItem"
-                                                              v-bind:style="{backgroundColor: colorItem}"></span>
-                                                    </label>
+                                                </div>
+
+                                                <div class="btn-row">
+                                                    <button title="Pick a color"
+                                                            v-on:click="popups.showColor = !popups.showColor"
+                                                            v-bind:class="{ active: popups.showColor }">
+                                                        <i class="fas fa-palette"></i>
+                                                        <span class="color-icon"
+                                                              v-bind:style="{backgroundColor: color}">
+                                                        </span>
+                                                    </button>
+
+                                                    <div class="popup shadow-lg" v-if="popups.showColor">
+                                                        <div class="popup-title">
+                                                            Brush color
+                                                        </div>
+                                                        <label v-for="colorItem in colors" class="color-item">
+                                                            <input type="radio"
+                                                                   name="color"
+                                                                   v-model="color"
+                                                                   v-bind:value="colorItem">
+                                                            <span v-bind:class="'color color-' + colorItem"
+                                                                  v-bind:style="{backgroundColor: colorItem}"></span>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -256,7 +259,7 @@
                 term: "",
                 startActive: false,
                 lobbyActive: false,
-                gameActive: false,
+                gameActive: true,
                 winActive: false,
                 judgeActive: true,
                 lobbyPlayers: [],
@@ -272,7 +275,7 @@
                 winnerVoting: false,
                 winnerVoted: false,
                 aiBrokeTie: false,
-                winner: { Name: ""},
+                winner: { Name: "" },
 
                 history: [],
                 color: '#13c5f7',
@@ -298,7 +301,8 @@
                     '#f71313',
                     '#f76213',
                     '#f79413',
-                    '#f7e013'],
+                    '#f7e013',
+                    '#000000'],
                 sizes: [6, 12, 24, 48],
                 weights: [2, 4, 6]
 
@@ -314,13 +318,11 @@
             },
 
             computed: {
-                lobbyTermsList: function ()
-                {
+                lobbyTermsList: function () {
                     var keys = Object.keys(this.lobbyTerms);
                     var terms = [];
 
-                    keys.forEach(function (term)
-                    {
+                    keys.forEach(function (term) {
                         terms.push(
                             {
                                 term: term,
@@ -332,24 +334,26 @@
                     //return _.orderBy(terms, 'votes', 'desc');
                     return terms;
                 },
-                showVoteButtons: function ()
-                {
+                showVoteButtons: function () {
                     return this.termVotes == 0;
                 },
-                votingCountDownStyle: function ()
-                {
+                votingCountDownStyle: function () {
                     return {
                         'text-danger': this.votingCountDown < 4,
                         'text-warning': this.votingCountDown < 5
+                    }
+                },
+                gameCountDownStyle: function () {
+                    return {
+                        'text-danger': this.gameCountDown < 4,
+                        'text-warning': this.gameCountDown < 10
                     }
                 }
             },
 
             methods: {
-                start: function ()
-                {
-                    if (this.playerName != "") 
-                    {
+                start: function () {
+                    if (this.playerName != "") {
                         this.gameConnection.server.addPlayerToLobby(this.playerID, this.playerName);
                         this.startActive = false;
                         this.lobbyActive = true;
@@ -364,16 +368,13 @@
                         });
                     }
                 },
-                voteTerm: function (term)
-                {
-                    if (this.termVotes > 0)
-                    {
+                voteTerm: function (term) {
+                    if (this.termVotes > 0) {
                         this.termVotes--;
                         this.gameConnection.server.voteTerm(this.playerID, term);
                     }
                 },
-                startLobbyTimer: function ()
-                {
+                startLobbyTimer: function () {
                     if (this.lobbyCountDown > 0) {
                         this.lobbyCountDown--;
                         setTimeout(this.startLobbyTimer, 1000);
@@ -399,7 +400,7 @@
                 },
                 removeAllHistory: () => {
                     VUE.history = [];
-                    draw.redraw();
+                    DRAW.redraw();
                 },
                 aiJudgement: function () {
                     if (this.judgementVotes > 0) {
@@ -451,7 +452,7 @@
                         });
                     }, 5000);
                 },
-                resetGame: function() {
+                resetGame: function () {
                     VUE.playerName = "";
                     VUE.term = "";
                     VUE.startActive = true;
@@ -472,7 +473,7 @@
                     VUE.winnerVoting = false;
                     VUE.winnerVoted = false;
                     VUE.aiBrokeTie = false;
-                    VUE.winner = { Name: ""};
+                    VUE.winner = { Name: "" };
                     VUE.history = [];
                     VUE.color = '#13c5f7';
                     VUE.popups = {
@@ -486,18 +487,15 @@
             mounted: function () {
 
                 this.gameConnection.client.playerAddedToLobby = function (names) {
-                    VUE.lobbyPlayers = names;  
+                    VUE.lobbyPlayers = names;
 
-                    if (names.length == 2)
-                    {
+                    if (names.length == 2) {
                         VUE.startLobbyTimer();
                     }
-                    else if (names.length == 3)
-                    {
+                    else if (names.length == 3) {
                         VUE.lobbyCountDown = 30;
                     }
-                    else if (names.length == 4)
-                    {
+                    else if (names.length == 4) {
                         VUE.lobbyCountDown = 10;
                     }
                 }
@@ -623,7 +621,7 @@
                     if (this.mouseDown) {
                         this.mouseX = this.mouseX;
                         this.mouseY = this.mouseY;
-      
+
                         this.mouseX = e.offsetX;
                         this.mouseY = e.offsetY;
 

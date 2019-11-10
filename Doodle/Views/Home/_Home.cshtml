@@ -313,7 +313,7 @@
                 aiBrokeTie: false,
                 gameLoading: false,
                 isTie: false,
-                stopLobbyTimer: false,
+                stopTimer: false,
                 winner: { Name: "" },
 
                 history: [],
@@ -574,7 +574,7 @@
                     }, 10000);
                 },
                 resetGame: function () {
-                    VUE.stopTimer = true;
+                    VUE.stopTimer = false;
                     VUE.term = "";
                     VUE.startActive = true;
                     VUE.lobbyActive = false;
@@ -669,13 +669,14 @@
                 }
 
                 this.gameConnection.client.startGame = function (term) {
+                    if (!VUE.gameActive) {
+                        VUE.term = term;
 
-                    VUE.term = term;
+                        VUE.lobbyActive = false;
+                        VUE.gameActive = true;
 
-                    VUE.lobbyActive = false;
-                    VUE.gameActive = true;
-
-                    VUE.startGameTimer();
+                        VUE.startGameTimer();
+                    }
                 }
 
                 this.gameConnection.client.endGame = function () {

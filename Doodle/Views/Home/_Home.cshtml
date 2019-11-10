@@ -31,25 +31,52 @@
             </div>
             <div id="LobbyScreen" :class="{'carousel-item': true, active: lobbyActive}">
                 <div class="container-fluid" style="height:100vh">
-                    {{lobbyCountDown}}
-                    <div class="row align-items-center" style="height:100vh">
+                    <div class="row align-items-center">
                         <div class="col text-center">
-                            <div class="row">
+                            <h1>Doodle Dash Lobby</h1>
+                        </div>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col text-center">
+                            <h2>Waiting for players...</h2>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-5 text-center">
+                            <div class="row align-items-center">
                                 <div class="col text-center">
-                                    <div id="Players" v-for="player in lobbyPlayers">
-                                        <h1>{{player}}</h1>
-                                    </div>
-                                </div>
-                                <div class="col text-center">
-                                    <transition-group name="flip-list" tag="div">
-                                        <div id="Terms" v-for="term in lobbyTermsList" :key="term.term">
-                                            <h1>{{term.term}}</h1>
-                                            <h1>{{term.votes}}</h1>
-                                            <button type="button" v-on:click="voteTerm(term.term)" class="btn btn-outline-secondary" :class="{hidden: showVoteButtons }">Vote</button>
-                                        </div>
-                                    </transition-group>
+                                    <h2>Players</h2>
                                 </div>
                             </div>
+                            <div class="row align-items-center">
+                                <div class="col text-center">
+                                    <ul class="list-group align-items-center text-center">
+                                        <li class="li-element list-group-item" id="Players" v-for="player in lobbyPlayers">
+                                            <h3 class="h3-override">{{player}}</h3>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7 text-center">
+                            <div class="row align-items-center">
+                                <div class="col text-center">
+                                    <h2>Click to Vote!</h2>
+                                </div>
+                            </div>
+                            <div class="row align-items-center">
+                                <div class="col text-center border-left">
+                                    <ul class="list-group align-items-center">
+                                        <li id="Terms" v-for="term in lobbyTermsList" :key="term.term" class="li-element list-group-item d-flex justify-content-between align-items-center btn btn-outline-secondary" type="button" v-on:click="voteTerm(term.term)" :class="{disabled: showVoteButtons }">
+                                            <h3 class="h3-override">{{term.term}}</h3>
+                                            <span class="badge badge-primary badge-pill">{{term.votes}}</span>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -154,11 +181,11 @@
                                     <br />
                                 </div>
                             </div>
-                             <div class="row">
-                                 <div class="col text-center">
-                                     Time Remaining: {{judgementCountDown}}
-                                 </div>
-                             </div>
+                            <div class="row">
+                                <div class="col text-center">
+                                    Time Remaining: {{judgementCountDown}}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -247,7 +274,7 @@
                 winnerVoting: false,
                 winnerVoted: false,
                 aiBrokeTie: false,
-                winner: { Name: ""},
+                winner: { Name: "" },
 
                 history: [],
                 color: '#13c5f7',
@@ -289,13 +316,11 @@
             },
 
             computed: {
-                lobbyTermsList: function ()
-                {
+                lobbyTermsList: function () {
                     var keys = Object.keys(this.lobbyTerms);
                     var terms = [];
 
-                    keys.forEach(function (term)
-                    {
+                    keys.forEach(function (term) {
                         terms.push(
                             {
                                 term: term,
@@ -306,12 +331,10 @@
 
                     return _.orderBy(terms, 'votes', 'desc');
                 },
-                showVoteButtons: function ()
-                {
+                showVoteButtons: function () {
                     return this.termVotes == 0;
                 },
-                votingCountDownStyle: function ()
-                {
+                votingCountDownStyle: function () {
                     return {
                         'text-danger': this.votingCountDown < 4,
                         'text-warning': this.votingCountDown < 5
@@ -320,29 +343,23 @@
             },
 
             methods: {
-                start: function ()
-                {
-                    if (this.playerName != "") 
-                    {
+                start: function () {
+                    if (this.playerName != "") {
                         this.gameConnection.server.addPlayerToLobby(this.playerID, this.playerName);
                         this.startActive = false;
                         this.lobbyActive = true;
                     }
-                    else
-                    {
+                    else {
                         alert("Empty Name");
                     }
                 },
-                voteTerm: function (term)
-                {
-                    if (this.termVotes > 0)
-                    {
+                voteTerm: function (term) {
+                    if (this.termVotes > 0) {
                         this.termVotes--;
                         this.gameConnection.server.voteTerm(this.playerID, term);
                     }
                 },
-                startLobbyTimer: function ()
-                {
+                startLobbyTimer: function () {
                     if (this.lobbyCountDown > 0) {
                         this.lobbyCountDown--;
                         setTimeout(this.startLobbyTimer, 1000);
@@ -420,7 +437,7 @@
                         });
                     }, 5000);
                 },
-                resetGame: function() {
+                resetGame: function () {
                     VUE.playerName = "";
                     VUE.term = "";
                     VUE.startActive = true;
@@ -441,7 +458,7 @@
                     VUE.winnerVoting = false;
                     VUE.winnerVoted = false;
                     VUE.aiBrokeTie = false;
-                    VUE.winner = { Name: ""};
+                    VUE.winner = { Name: "" };
                     VUE.history = [];
                     VUE.color = '#13c5f7';
                     VUE.popups = {
@@ -455,18 +472,15 @@
             mounted: function () {
 
                 this.gameConnection.client.playerAddedToLobby = function (names) {
-                    VUE.lobbyPlayers = names;  
+                    VUE.lobbyPlayers = names;
 
-                    if (names.length == 2)
-                    {
+                    if (names.length == 2) {
                         VUE.startLobbyTimer();
                     }
-                    else if (names.length == 3)
-                    {
+                    else if (names.length == 3) {
                         VUE.lobbyCountDown = 30;
                     }
-                    else if (names.length == 4)
-                    {
+                    else if (names.length == 4) {
                         VUE.lobbyCountDown = 10;
                     }
                 }
@@ -592,7 +606,7 @@
                     if (this.mouseDown) {
                         this.mouseX = this.mouseX;
                         this.mouseY = this.mouseY;
-      
+
                         this.mouseX = e.offsetX;
                         this.mouseY = e.offsetY;
 

@@ -329,7 +329,8 @@
                         )
                     });
 
-                    return _.orderBy(terms, 'votes', 'desc');
+                    //return _.orderBy(terms, 'votes', 'desc');
+                    return terms;
                 },
                 showVoteButtons: function () {
                     return this.termVotes == 0;

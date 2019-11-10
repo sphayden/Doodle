@@ -1,9 +1,5 @@
 ﻿[
   {
-    "outputFile": "Content/Judging.css",
-    "inputFile": "Content/Judging.scss"
-  },
-  {
     "outputFile": "Content/Lobby.css",
     "inputFile": "Content/Lobby.scss"
   }

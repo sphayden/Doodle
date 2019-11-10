@@ -319,6 +319,12 @@
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\Game.min.css" />
+    <Content Include="Content\Judging.min.css" />
+    <Content Include="Content\Lobby.min.css" />
+    <Content Include="Content\Site.min.css" />
+    <Content Include="Content\Title.min.css" />
+    <Content Include="Content\Win.min.css" />
     <Content Include="Content\Lobby.css">
       <DependentUpon>Lobby.scss</DependentUpon>
     </Content>
@@ -416,7 +422,6 @@
       <DependentUpon>Web.config</DependentUpon>
     </Content>
     <Content Include="Scripts\knockout.validation.min.js.map" />
-    <Content Include="Utility\key.json" />
     <Content Include="Utility\my-project-90986-379273cc3cd3.json" />
   </ItemGroup>
   <ItemGroup>

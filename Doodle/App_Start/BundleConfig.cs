@@ -47,6 +47,7 @@ namespace Doodle
                  "~/Content/Judging.min.css",
                  "~/Content/Win.min.css"
                  ));
+
         }
     }
 }

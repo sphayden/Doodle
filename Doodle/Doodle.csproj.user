@@ -10,6 +10,13 @@
     <UseGlobalApplicationHostFile />
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
     <ProjectView>ShowAllFiles</ProjectView>
+    <GoogleCloudPublishChoice>Gce</GoogleCloudPublishChoice>
+    <GoogleComputeEnginePublishInstanceName>aspnet-1</GoogleComputeEnginePublishInstanceName>
+    <GoogleComputeEnginePublishInstanceZone>us-central1-f</GoogleComputeEnginePublishInstanceZone>
+    <GoogleComputeEnginePublishInstanceUserName>admin</GoogleComputeEnginePublishInstanceUserName>
+    <GoogleComputeEnginePublishOpenWebsite>True</GoogleComputeEnginePublishOpenWebsite>
+    <GoogleComputeEnginePublishLaunchRemoteDebugger>False</GoogleComputeEnginePublishLaunchRemoteDebugger>
+    <GoogleComputeEnginePublishSiteName>Default Web Site</GoogleComputeEnginePublishSiteName>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>

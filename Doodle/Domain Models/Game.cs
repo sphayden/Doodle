@@ -29,7 +29,7 @@ namespace Doodle.Domain_Models
             Timer.Interval = 30000;
             ImageTimer.Interval = 2000;
             JudgementTimer.Interval = 10000;
-            VoteTimer.Interval = 20000;
+            VoteTimer.Interval = 15000;
 
             Timer.GameID = GameID;
             ImageTimer.GameID = GameID;

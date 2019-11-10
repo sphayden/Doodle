@@ -122,6 +122,8 @@ namespace Doodle.Hubs
                         game.Players.OrderByDescending(p => p.PercentageMatch).First(),
                         game.Players
                     );
+
+                ResetGame(game);
             }
         }
 
@@ -137,6 +139,8 @@ namespace Doodle.Hubs
                         game.Players.OrderByDescending(p => p.PercentageMatch).First(),
                         game.Players
                     );
+
+                ResetGame(game);
             }
             else if (game.AIVotes < game.PeerVotes)
             {
@@ -155,6 +159,8 @@ namespace Doodle.Hubs
                         game.Players.OrderByDescending(p => p.PercentageMatch).First(),
                         game.Players
                     );
+
+                    ResetGame(game);
                 }
                 else if (ranInt == 1)
                 {
@@ -181,6 +187,8 @@ namespace Doodle.Hubs
                         game.Players.OrderByDescending(p => p.PercentageMatch).First(),
                         game.Players
                     );
+
+                ResetGame(game);
             }
             else
             {
@@ -188,6 +196,8 @@ namespace Doodle.Hubs
                        topPlayers.First(),
                        game.Players
                    );
+
+                ResetGame(game);
             }
         }
 
@@ -246,6 +256,13 @@ namespace Doodle.Hubs
                     }
                 }
             });
+        }
+
+        public void ResetGame(Game game)
+        {
+            game.Players.ForEach(p => Groups.Remove(p.ConnectionID, game.GameID));
+            Games.Remove(game);
+            NonLobbyPlayers.AddRange(game.Players);
         }
 
         public void VoteTerm(String playerID, String term)

@@ -242,7 +242,7 @@
                 lobbyCountDown: 30,
                 gameCountDown: 30,
                 judgementCountDown: 10,
-                votingCountDown: 20,
+                votingCountDown: 15,
                 finishedPlayers: [],
                 winnerVoting: false,
                 winnerVoted: false,
@@ -389,7 +389,67 @@
                         this.gameConnection.server.votePlayer(this.playerID, player.Name);
                     }
                 },
+                newGame: function () {
+                    setTimeout(function () {
+                        $.confirm({
+                            title: 'Play Again',
+                            icon: 'fa fa-question',
+                            type: 'blue',
+                            content: 'How about another go?',
+                            buttons: {
+                                again: {
+                                    text: 'Play Again',
+                                    btnClass: 'btn-blue',
+                                    keys: ['enter', 'shift'],
+                                    action: function () {
+                                        VUE.resetGame();
 
+                                        VUE.gameConnection.server.addPlayerToLobby(VUE.playerID, VUE.playerName);
+                                        VUE.startActive = false;
+                                        VUE.lobbyActive = true;
+                                    }
+                                },
+                                quit: {
+                                    text: 'Quit',
+                                    btnClass: 'btn-red',
+                                    action: function () {
+                                        location.reload();
+                                    }
+                                }
+                            }
+                        });
+                    }, 5000);
+                },
+                resetGame: function() {
+                    VUE.playerName = "";
+                    VUE.term = "";
+                    VUE.startActive = true;
+                    VUE.lobbyActive = false;
+                    VUE.gameActive = false;
+                    VUE.winActive = false;
+                    VUE.judgeActive = false;
+                    VUE.lobbyPlayers = [];
+                    VUE.lobbyTerms = [];
+                    VUE.termVotes = 2;
+                    VUE.judgementVotes = 1;
+                    VUE.playerVotes = 2;
+                    VUE.lobbyCountDown = 30;
+                    VUE.gameCountDown = 30;
+                    VUE.judgementCountDown = 10;
+                    VUE.votingCountDown = 15;
+                    VUE.finishedPlayers = [];
+                    VUE.winnerVoting = false;
+                    VUE.winnerVoted = false;
+                    VUE.aiBrokeTie = false;
+                    VUE.winner = { Name: ""};
+                    VUE.history = [];
+                    VUE.color = '#13c5f7';
+                    VUE.popups = {
+                        showColor: false,
+                        showSize: false
+                    };
+                    VUE.size = 12;
+                }
             },
 
             mounted: function () {
@@ -454,6 +514,8 @@
                     VUE.finishedPlayers = players;
                     VUE.winnerVoting = false;
                     VUE.winnerVoted = true;
+
+                    VUE.newGame();
                 }
 
                 this.gameConnection.client.displayAIWinner = function (winner, players) {
@@ -468,6 +530,8 @@
                         VUE.winnerVoting = false;
                         VUE.winnerVoted = true;
                     }
+
+                    VUE.newGame();
                 }
 
                 this.gameConnection.client.setTerms = function (terms) {

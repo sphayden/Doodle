@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Web;
 using Doodle.Domain_Models;
@@ -19,6 +20,20 @@ namespace Doodle.Hubs
         public static List<Player> NonLobbyPlayers = new List<Player>();
 
         public static List<Game> Games = new List<Game>();
+
+        public void ValidateName(String playerName)
+        {
+            Player p = Lobby.Players.Find(p1 => p1.Name == playerName);
+
+            if (p == null)
+            {
+                Clients.Caller.nameIsValid();
+            }
+            else
+            {
+                Clients.Caller.nameIsNotValid();
+            }
+        }
 
         public void AddPlayerToLobby(String playerID, String playerName)
         {
@@ -56,6 +71,52 @@ namespace Doodle.Hubs
 
                 Clients.All.playerAddedToLobby(Lobby.Players.Select(p1 => p1.Name).ToList());
             }
+        }
+
+        public override Task OnDisconnected(bool stopCalled)
+        {
+            Player p = Lobby.Players.Find(p1 => p1.ConnectionID == Context.ConnectionId);
+
+            if ( p != null)
+            {
+                Groups.Remove(p.ConnectionID, "Lobby");
+                Lobby.Players.Remove(p);
+
+                if (Lobby.Players.Count < 2)
+                {
+                    Lobby.Timer.Stop();
+                }
+
+                Clients.All.playerRemovedFromLobby(p.Name);
+            }
+            else
+            {
+                Game gameToReset = null;
+                Games.ForEach(g =>
+                {
+                    Player gp = g.Players.Find(p1 => p1.ConnectionID == Context.ConnectionId);
+                    
+                    if (gp != null)
+                    {
+                        if (g.Players.Count - 1 <= 1)
+                        {
+                            gameToReset = g;
+                        }
+                    }
+                });
+
+                if (gameToReset != null)
+                {
+                    gameToReset.Timer.Stop();
+                    gameToReset.ImageTimer.Stop();
+                    gameToReset.JudgementTimer.Stop();
+                    gameToReset.VoteTimer.Stop();
+                    Clients.Group(gameToReset.GameID).terminateGame();
+                    ResetGame(gameToReset);
+                }
+            }
+
+            return base.OnDisconnected(stopCalled);
         }
 
         void LobbyTimerElapsed(object sender, ElapsedEventArgs e)
@@ -118,10 +179,24 @@ namespace Doodle.Hubs
             }
             else
             {
-                Clients.Group(game.GameID).displayAIWinner(
-                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                int highestMatch = game.Players.OrderByDescending(p => p.PercentageMatch).First().PercentageMatch;
+
+                List<Player> topPlayers = game.Players.FindAll(p => p.PercentageMatch == highestMatch).ToList();
+
+                if (topPlayers.Count > 1)
+                {
+                    Clients.Group(game.GameID).displayAIWinner(
+                        null,
                         game.Players
                     );
+                }
+                else
+                {
+                    Clients.Group(game.GameID).displayAIWinner(
+                        topPlayers.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
+                }
 
                 ResetGame(game);
             }
@@ -183,10 +258,24 @@ namespace Doodle.Hubs
 
             if (topPlayers.Count > 1)
             {
-                Clients.Group(game.GameID).displayAIWinner(
-                        game.Players.OrderByDescending(p => p.PercentageMatch).First(),
+                int highestMatch = topPlayers.OrderByDescending(p => p.PercentageMatch).First().PercentageMatch;
+
+                List<Player> topTopPlayers = topPlayers.FindAll(p => p.PercentageMatch == highestMatch).ToList();
+
+                if (topTopPlayers.Count > 1)
+                {
+                    Clients.Group(game.GameID).displayAIWinner(
+                        null,
                         game.Players
                     );
+                }
+                else
+                {
+                    Clients.Group(game.GameID).displayAIWinner(
+                        topTopPlayers.OrderByDescending(p => p.PercentageMatch).First(),
+                        game.Players
+                    );
+                }
 
                 ResetGame(game);
             }
@@ -265,7 +354,17 @@ namespace Doodle.Hubs
 
         public void ResetGame(Game game)
         {
-            game.Players.ForEach(p => Groups.Remove(p.ConnectionID, game.GameID));
+            game.Players.ForEach(p => {
+                Groups.Remove(p.ConnectionID, game.GameID);
+
+                p.ImageFullPath = null;
+                p.ImagePath = null;
+                p.PercentageMatch = 0;
+                p.Votes = 0;
+                p.JudgingVotes = 1;
+                p.PlayerVotes = 2;
+                p.TermVotes = 2;
+            });
             Games.Remove(game);
             NonLobbyPlayers.AddRange(game.Players);
         }

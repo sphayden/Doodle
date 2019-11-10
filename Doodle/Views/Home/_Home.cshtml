@@ -1,21 +1,41 @@
-﻿<div id="app">
+﻿<div class="overlay"></div>
+
+<div id="app">
     <div id="PlayerID" class="hidden">@ViewBag.PlayerID</div>
     <div id="CoreCarousel" class="carousel carousel-fade">
         <div class="carousel-inner">
-            <div id="StartScreen" :class="{'carousel-item': true, active: startActive}">
+            <div id="StartScreen" class="active" :class="{'carousel-item': true, inactivate: !startActive}">
                 <div class="container-fluid" style="height:100vh">
+
+                    <svg style="top: 140px; left: 150px;" x="0px" y="0px" width="160px" height="165px" viewBox="0 0 150 160">
+                        <polygon points="65.7,0 0,64.4 34.9,69.8 30.9,140.8 67.1,138.2 67.1,96.6 87.2,95.2 91.2,140.8 127.4,132.8
+	                        120.7,75.1 148.9,69.8 116.7,40.2 122.1,4 99.3,1.3 99.3,22.8 " />
+                    </svg>
+
+                    <svg class="backwards" style="top: 540px; left: 200px;" x="0px" y="0px" width="400px" height="400px" viewBox="0 0 400 400">
+                        <polygon points="288.58192987669304,207.40251485476347 207.40251485476347,288.58192987669304 92.59748514523653,288.58192987669304 11.41807012330699,207.40251485476347 11.418070123306961,92.59748514523655 92.59748514523645,11.418070123307018 207.4025148547635,11.418070123307018 288.581929876693,92.59748514523645" />
+                    </svg>
+
+                    <svg class="backwards" style="top: 120px; right: 200px;" x="0px" y="0px" width="300px" height="300px" viewBox="0 0 400 400">
+                        <polygon points="225,279.9038105676658 0,150.00000000000003 224.9999999999999,20.096189432334143" />
+                    </svg>
+
+                    <svg style="bottom: -10px; right: 30px;" x="0px" y="0px" width="350px" height="350px" viewBox="0 0 450 450">
+                        <polygon points="309.53760005996924,171.76886435917675 305.8554880596515,195.0168045783858 298.58192987669304,217.40251485476347 287.89602465311384,238.37478470739234 274.0608948400046,257.41720724952756 257.41720724952756,274.0608948400046 238.37478470739234,287.89602465311384 217.40251485476347,298.58192987669304 195.01680457838583,305.8554880596515 171.76886435917675,309.53760005996924 148.23113564082325,309.53760005996924 124.98319542161417,305.8554880596515 102.59748514523653,298.58192987669304 81.62521529260768,287.89602465311384 62.582792750472464,274.06089484000466 45.93910515999538,257.41720724952756 32.10397534688617,238.37478470739234 21.41807012330699,217.40251485476347 14.144511940348508,195.01680457838583 10.462399940030792,171.76886435917675 10.462399940030792,148.23113564082328 14.144511940348508,124.9831954216142 21.418070123307018,102.59748514523649 32.103975346886116,81.62521529260775 45.93910515999535,62.582792750472464 62.58279275047238,45.93910515999541 81.62521529260772,32.103975346886145 102.59748514523645,21.418070123307018 124.98319542161423,14.144511940348508 148.23113564082317,10.462399940030792 171.76886435917677,10.462399940030792 195.01680457838572,14.14451194034848 217.4025148547635,21.418070123307018 238.37478470739225,32.103975346886116 257.41720724952756,45.93910515999538 274.0608948400046,62.58279275047238 287.89602465311384,81.62521529260769 298.581929876693,102.59748514523645 305.8554880596515,124.98319542161423 309.53760005996924,148.23113564082317" />
+                    </svg>
+
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
                             <div class="row">
                                 <div class="col text-center">
-                                    <h1>Doodle Dash</h1>
-                                    <h3>Compete with your friends and race the clock for the best doodle!</h3>
+                                    <img src="~/Images/Logo3.PNG" />
+                                    <h3 class="text-white">Compete with your friends and race the clock for the best doodle!</h3>
                                     <br /><br />
                                 </div>
                             </div>
                             <div class="row justify-content-center">
                                 <div class="col-lg-3">
-                                    <input class="form-control form-control-lg" v-model="playerName" type="text" placeholder="Name">
+                                    <input class="form-control form-control-lg" v-model="playerName" type="text" maxlength="10" placeholder="Name">
                                     <br />
                                 </div>
                             </div>
@@ -29,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div id="LobbyScreen" :class="{'carousel-item': true, active: lobbyActive}">
+            <div id="LobbyScreen"  class="active" :class="{'carousel-item': true, inactivate: !lobbyActive}">
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:20%">
                         <div class="col text-center">
@@ -95,7 +115,8 @@
                     </div>
                 </div>
             </div>
-            <div id="GameScreen" :class="{'carousel-item': true, active: gameActive}">
+            <div id="GameScreen" class="active" :class="{'carousel-item': true, inactivate: !gameActive}">
+                <div class="loading row align-items-center justify-content-center" :class="{hidden: !gameLoading}"><img class="animated infinite jackInTheBox slow position-relative" src="~/Images/Favicon.PNG"/></div>
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
@@ -106,114 +127,115 @@
                                 <div class="col text-center">
                                     <h1>Term: <strong class="h1">{{term}}</strong></h1>
                                 </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col text-center" style="top: -30px;padding-right: 0;padding-left: 0;">
-                                        <div class="canvas-wrapper">
-                                            <canvas id="canvas"></canvas>
-                                            <div class="cursor" id="cursor"></div>
-                                            <div class="controls">
-                                                <div class="btn-row">
-                                                    <button type="button"
-                                                            v-on:click="removeAllHistory"
-                                                            v-bind:class="{ disabled: !history.length }" title="Clear all">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col text-center" style="top: -30px;padding-right: 0;padding-left: 0;">
+                                    <div class="canvas-wrapper">
+                                        <canvas id="canvas"></canvas>
+                                        <div class="cursor" id="cursor"></div>
+                                        <div class="controls shadow">
+                                            <div class="btn-row">
+                                                <button type="button"
+                                                        v-on:click="removeAllHistory"
+                                                        v-bind:class="{ disabled: !history.length }" title="Clear all">
+                                                    <i class="fas fa-trash fa-lg"></i>
+                                                </button>
+                                            </div>
 
-                                                <div class="btn-row">
-                                                    <button title="Pick a brush size"
-                                                            v-on:click="popups.showSize = !popups.showSize"
-                                                            v-bind:class="{ active: popups.showSize }">
-                                                        <i class="fas fa-circle"></i>
-                                                        <span class="size-icon">
-                                                            {{ size }}
-                                                        </span>
-                                                    </button>
+                                            <div class="btn-row">
+                                                <button title="Pick a brush size"
+                                                        v-on:click="popups.showSize = !popups.showSize"
+                                                        v-bind:class="{ active: popups.showSize }">
+                                                    <i class="fas fa-circle fa-lg"></i>
+                                                    <span class="size-icon">
+                                                        {{ size }}
+                                                    </span>
+                                                </button>
 
-                                                    <div class="popup shadow-lg" v-if="popups.showSize">
-                                                        <div class="popup-title">
-                                                            Brush size
-                                                        </div>
-                                                        <label v-for="sizeItem in sizes" class="size-item">
-                                                            <input type="radio" name="size" v-model="size" v-bind:value="sizeItem">
-                                                            <span class="size"
-                                                                  v-bind:style="{width: sizeItem + 'px', height: sizeItem + 'px'}"></span>
-                                                        </label>
+                                                <div class="popup shadow-lg" v-if="popups.showSize">
+                                                    <div class="popup-title">
+                                                        Brush size
                                                     </div>
+                                                    <label v-for="sizeItem in sizes" class="size-item">
+                                                        <input type="radio" name="size" v-model="size" v-bind:value="sizeItem">
+                                                        <span class="size"
+                                                              v-bind:style="{width: sizeItem + 'px', height: sizeItem + 'px'}"></span>
+                                                    </label>
                                                 </div>
+                                            </div>
 
-                                                <div class="btn-row">
-                                                    <button title="Pick a color"
-                                                            v-on:click="popups.showColor = !popups.showColor"
-                                                            v-bind:class="{ active: popups.showColor }">
-                                                        <i class="fas fa-palette"></i>
-                                                        <span class="color-icon"
-                                                              v-bind:style="{backgroundColor: color}">
-                                                        </span>
-                                                    </button>
+                                            <div class="btn-row">
+                                                <button title="Pick a color"
+                                                        v-on:click="popups.showColor = !popups.showColor"
+                                                        v-bind:class="{ active: popups.showColor }">
+                                                    <i class="fas fa-palette fa-lg"></i>
+                                                    <span class="color-icon"
+                                                          v-bind:style="{backgroundColor: color}">
+                                                    </span>
+                                                </button>
 
-                                                    <div class="popup shadow-lg" v-if="popups.showColor">
-                                                        <div class="popup-title">
-                                                            Brush color
-                                                        </div>
-                                                        <label v-for="colorItem in colors" class="color-item">
-                                                            <input type="radio"
-                                                                   name="color"
-                                                                   v-model="color"
-                                                                   v-bind:value="colorItem">
-                                                            <span v-bind:class="'color color-' + colorItem"
-                                                                  v-bind:style="{backgroundColor: colorItem}"></span>
-                                                        </label>
+                                                <div class="popup shadow-lg" v-if="popups.showColor">
+                                                    <div class="popup-title">
+                                                        Brush color
                                                     </div>
+                                                    <label v-for="colorItem in colors" class="color-item">
+                                                        <input type="radio"
+                                                               name="color"
+                                                               v-model="color"
+                                                               v-bind:value="colorItem">
+                                                        <span v-bind:class="'color color-' + colorItem"
+                                                              v-bind:style="{backgroundColor: colorItem}"></span>
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div id="JudgementScreen" :class="{'carousel-item': true, active: judgeActive}">
+            <div id="JudgementScreen" class="active" :class="{'carousel-item': true, inactivate: !judgeActive}">
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
                             <div class="row">
                                 <div class="col text-center">
-                                    <h1>How will we decide the winner?</h1>
+                                    <h1>How Will We Decide The Winner ?</h1>
                                     <br /><br />
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-lg-2 col-lg-offset-4">
-                                    <button type="button" v-on:click="aiJudgement" :class="{disabled: judgementVotes==0}" class="btn btn-lg bigger-btn btn-dark"><h3>AI</h3></button>
+                                    <button type="button" v-on:click="aiJudgement" :class="{disabled: judgementVotes==0}" class="btn btn-lg bigger-btn btn-primary shadow"><h3>AI</h3></button>
                                     <br />
                                 </div>
                                 <div class="col-lg-2">
-                                    <button type="button" v-on:click="peerJudgement" :class="{disabled: judgementVotes==0}" class="btn btn-lg bigger-btn btn-dark"><h3>Democratically</h3></button>
+                                    <button type="button" v-on:click="peerJudgement" :class="{disabled: judgementVotes==0}" class="btn btn-lg bigger-btn btn-primary shadow"><h3>Democratically</h3></button>
                                     <br />
                                 </div>
                             </div>
-                             <div class="row">
-                                 <div class="col text-center">
-                                     <br /><br />
-                                     Time Remaining: {{judgementCountDown}}
-                                 </div>
-                             </div>
+                            <div class="row">
+                                <div class="col text-center">
+                                    <br /><br />
+                                    <h3>Time Remaining: <strong class="h2" :class="judgementCountDownStyle">{{judgementCountDown}}</strong></h3>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="WinningScreen" :class="{'carousel-item': true, active: winActive}">
+            <div id="WinningScreen" class="active" :class="{'carousel-item': true, inactivate: !winActive}">
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
-                            <div class="row justify-content-center mb-5">
-                                <h1 v-if="!winnerVoting && !winnerVoted">The AI Has Chosen The WINNER!</h1>
+                            <div class="row justify-content-center mb-5 text-white">
+                                <h1 v-if="!winnerVoting && !winnerVoted && !isTie">The AI Has Chosen The WINNER!</h1>
                                 <h1 v-if="winnerVoting">Click On Your Favorite Two Drawings:</h1>
-                                <h1 v-if="winnerVoted && !aiBrokeTie">A WINNER Has Been Chosen!</h1>
-                                <h1 v-if="aiBrokeTie">The AI Has Broken A Tie!</h1>
+                                <h1 v-if="winnerVoted && !aiBrokeTie && !isTie">A WINNER Has Been Chosen!</h1>
+                                <h1 v-if="aiBrokeTie && !isTie">The AI Has Broken A Tie!</h1>
+                                <h1 v-if="isTie">It's A Tie!</h1>
                             </div>
                             <div class="row justify-content-center">
                                 <div class="col text-center">
@@ -240,6 +262,9 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="row justify-content-center mb-5 mt-4 text-white" v-if="!winnerVoting && !isTie">
+                                <h2>{{winner.Name}} has the best doodle of a {{term}}.</h2>
                             </div>
                             <div class="row">
                                 <div class="col text-center mt-4" v-if="winnerVoting">
@@ -289,6 +314,8 @@
                 winnerVoting: false,
                 winnerVoted: false,
                 aiBrokeTie: false,
+                gameLoading: false,
+                stopLobbyTimer: false,
                 winner: { Name: "" },
 
                 history: [],
@@ -363,6 +390,12 @@
                         'text-warning': this.gameCountDown < 10
                     }
                 },
+                judgementCountDownStyle: function () {
+                    return {
+                        'text-danger': this.judgementCountDown < 4,
+                        'text-warning': this.judgementCountDown < 5
+                    }
+                },
                 lobbyCountDownStyle: function () {
                     return {
                         'bg-danger': this.lobbyCountDown < 5,
@@ -374,14 +407,12 @@
             methods: {
                 start: function () {
                     if (this.playerName != "") {
-                        this.gameConnection.server.addPlayerToLobby(this.playerID, this.playerName);
-                        this.startActive = false;
-                        this.lobbyActive = true;
+
+                        this.gameConnection.server.validateName(this.playerName);
                     }
-                    else
-                    {
+                    else {
                         $.alert({
-                            title: 'No Name',
+                            title: 'No Name Entered',
                             type: 'red',
                             icon: 'fa fa-warning',
                             content: 'Please enter a name if you are starting or joining a game',
@@ -397,24 +428,48 @@
                 startLobbyTimer: function () {
                     if (this.lobbyCountDown > 0) {
                         this.lobbyCountDown--;
+
+                        if (this.stopTimer) {
+                            this.stopTimer = false;
+                            return;
+                        }
+
                         setTimeout(this.startLobbyTimer, 1000);
                     }
                 },
                 startGameTimer: function () {
                     if (this.gameCountDown > 0) {
                         this.gameCountDown--;
+
+                        if (this.stopTimer) {
+                            this.stopTimer = false;
+                            return;
+                        }
+
                         setTimeout(this.startGameTimer, 1000);
                     }
                 },
                 startJudgementTimer: function () {
                     if (this.judgementCountDown > 0) {
                         this.judgementCountDown--;
+
+                        if (this.stopTimer) {
+                            this.stopTimer = false;
+                            return;
+                        }
+
                         setTimeout(this.startJudgementTimer, 1000);
                     }
                 },
                 startVotingTimer: function () {
                     if (this.votingCountDown > 0) {
                         this.votingCountDown--;
+
+                        if (this.stopTimer) {
+                            this.stopTimer = false;
+                            return;
+                        }
+
                         setTimeout(this.startVotingTimer, 1000);
                     }
                 },
@@ -506,13 +561,20 @@
                                     action: function () {
                                         location.reload();
                                     }
+                                },
+                                cancel: {
+                                    text: 'Cancel',
+                                    btnClass: 'btn-secondary',
+                                    action: function () {
+
+                                    }
                                 }
                             }
                         });
-                    }, 5000);
+                    }, 10000);
                 },
                 resetGame: function () {
-                    VUE.playerName = "";
+                    VUE.stopTimer = true;
                     VUE.term = "";
                     VUE.startActive = true;
                     VUE.lobbyActive = false;
@@ -532,6 +594,7 @@
                     VUE.winnerVoting = false;
                     VUE.winnerVoted = false;
                     VUE.aiBrokeTie = false;
+                    VUE.isTie = false;
                     VUE.winner = { Name: "" };
                     VUE.history = [];
                     VUE.color = '#13c5f7';
@@ -540,10 +603,14 @@
                         showSize: false
                     };
                     VUE.size = 12;
+
+                    VUE.removeAllHistory();
                 }
             },
 
             mounted: function () {
+
+                $(".overlay").fadeOut();
 
                 this.gameConnection.client.playerAddedToLobby = function (names) {
                     VUE.lobbyPlayers = names;
@@ -559,6 +626,48 @@
                     }
                 }
 
+                this.gameConnection.client.playerRemovedFromLobby = function (name) {
+                    VUE.lobbyPlayers.splice(VUE.lobbyPlayers.indexOf(name), 1);
+
+                    if (names.length < 2) {
+                        VUE.stopTimer = true;
+                        VUE.lobbyCountDown = 30;
+                    }
+                }
+
+                this.gameConnection.client.nameIsValid = function () {
+                    VUE.gameConnection.server.addPlayerToLobby(VUE.playerID, VUE.playerName);
+                    VUE.startActive = false;
+                    VUE.lobbyActive = true;
+                }
+
+                this.gameConnection.client.nameIsNotValid = function () {
+                    $.alert({
+                        title: 'Name Taken',
+                        type: 'red',
+                        icon: 'fa fa-warning',
+                        content: 'This user name is already in use. Please choose another.',
+                    });
+                }
+
+                this.gameConnection.client.terminateGame = function () {
+                    $.alert({
+                        title: 'Game Forfitted',
+                        type: 'orange',
+                        icon: 'fa fa-exclamation',
+                        content: 'Your opponent has left the game. You will be redirected to the lobby.',
+                        buttons: {
+                            ok: function () {
+                                VUE.resetGame();
+
+                                VUE.gameConnection.server.addPlayerToLobby(VUE.playerID, VUE.playerName);
+                                VUE.startActive = false;
+                                VUE.lobbyActive = true;
+                            }
+                        }
+                    });
+                }
+
                 this.gameConnection.client.startGame = function (term) {
 
                     VUE.term = term;
@@ -570,6 +679,8 @@
                 }
 
                 this.gameConnection.client.endGame = function () {
+
+                    VUE.gameLoading = true;
 
                     $.ajax({
                         type: "POST",
@@ -584,6 +695,9 @@
                 }
 
                 this.gameConnection.client.chooseJudgement = function () {
+
+                    VUE.gameLoading = false;
+
                     VUE.gameActive = false;
                     VUE.judgeActive = true;
                     VUE.startJudgementTimer();
@@ -607,8 +721,19 @@
                 }
 
                 this.gameConnection.client.displayAIWinner = function (winner, players) {
+
+                    VUE.gameLoading = false;
+
                     VUE.finishedPlayers = players;
-                    VUE.winner = winner;
+
+                    if (winner != null) {
+                        VUE.winner = winner;
+                    }
+                    else
+                    {
+                        VUE.isTie = true;
+                    }
+
                     VUE.gameActive = false;
                     VUE.judgeActive = false;
                     VUE.winActive = true;

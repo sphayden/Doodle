@@ -44,11 +44,13 @@
 
     .controls {
         position: fixed;
-        z-index: 5;
+        z-index: 20;
         bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 60px;
+        left: 40%;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        width: 20%;
+        height: 80px;
         background-color: rgb(10, 10, 10);
         display: flex;
         justify-content: center;
@@ -67,14 +69,14 @@
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
-        padding: 0 15px;
+        padding: 0 30px;
         border-radius: 4px;
     }
 
     .popup {
         position: absolute;
         width: 300px;
-        bottom: 58px;
+        bottom: 68px;
         padding: 30px;
         left: calc(50% - 150px);
         display: flex;
@@ -82,9 +84,8 @@
         justify-content: center;
         background-color: white;
         color: rgb(30, 30, 30);
-        border-radius: 10px 10px 0 0;
+        border-radius: 10px 10px 10px 10px;
         border: 3px solid rgb(220, 220, 220);
-        border-bottom-width: 0;
         opacity: 0;
         animation: popup .5s forwards cubic-bezier(.2, 2, .4, 1);
         z-index: 2;
@@ -270,18 +271,18 @@
         .size-icon,
         .color-icon {
             position: absolute;
-            top: 10px;
+            top: 5px;
             right: 0;
         }
 
         .color-icon {
-            width: 10px;
-            height: 10px;
+            width: 15px;
+            height: 15px;
             border-radius: 50%;
         }
 
         .size-icon {
-            font-size: 8px;
+            font-size: 12px;
             text-align: right;
         }
 

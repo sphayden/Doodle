@@ -1,2 +1,3 @@
+.btn-dark:hover{background-color:white}svg{position:absolute}svg polygon.backwards{-webkit-animation:dash 5s linear backwards;animation:dash 5s linear backwards}svg polygon{fill:none;stroke:#fff;opacity:.7;stroke-width:10;stroke-linecap:round;stroke-dasharray:1000;stroke-dashoffset:1000;-webkit-animation:dash 5s linear forwards;animation:dash 5s linear forwards}@-webkit-keyframes dash{to{stroke-dashoffset:0}}@keyframes dash{to{stroke-dashoffset:0}}
 
 /*# sourceMappingURL=Title.css.map */

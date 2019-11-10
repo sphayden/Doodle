@@ -363,7 +363,7 @@ namespace Doodle.Hubs
                 p.Votes = 0;
                 p.JudgingVotes = 1;
                 p.PlayerVotes = 2;
-                p.TermVotes = 2;
+                p.TermVotes = 1;
             });
             Games.Remove(game);
             NonLobbyPlayers.AddRange(game.Players);

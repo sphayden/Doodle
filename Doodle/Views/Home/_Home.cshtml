@@ -53,17 +53,17 @@
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:20%">
                         <div class="col text-center">
-                            <h1 class="h1-override">Logo</h1>
+                            <img src="~/Images/Logo5.PNG" />
                         </div>
                     </div>
-                    <div class="row align-items-center" style="height:20%">
-                        <div class="col text-center">
+                    <div class="row justify-content-center align-items-center" style="height:20%">
+                        <div class="col-10 text-center">
                             <div v-if="lobbyPlayers.length > 1">
                                 <div class="progress">
                                     <div class="progress-bar progress-bar-animated" role="progressbar" :class="lobbyCountDownStyle" :style="{width: (lobbyCountDown/30) * 100 + '%'}"></div>
                                 </div>
                             </div>
-                            <h2  class="h2-override" v-if="lobbyPlayers.length == 1">Waiting for players..</h2>
+                            <h2  class="h2-override" v-if="lobbyPlayers.length == 1"><span class="loading-dots">Waiting for players</span></h2>
                         </div>
 
                     </div>
@@ -77,36 +77,33 @@
                             <div class="row align-items-start"style="height:70%">
                                 <div class="col text-center">
                                     <ul class="list-group align-items-center text-center">
-                                        <li class="li-element-player list-group-item" id="Players" v-for="player in lobbyPlayers">
+                                        <li class="li-element-player list-group-item card shadow" id="Players" v-for="player in lobbyPlayers">
                                             <h3 class="h3-override">{{player}}</h3>
                                         </li>
                                     </ul>
                                 </div>
                             </div>
-                            <div class="row align-items-end" style="height:15%">
-                                <div class="col text-center">
-                                    <ul class="list-group align-items-center text-center">
-                                        <li type="button" v-on:click="inviteFriend" class=" btn btn-primary  btn-lg btn-block invite-btn">
-                                            <h3 class="h3-override">Invite Friends!</h3>
-                                        </li>
-                                    </ul>
+                            <div class="row align-items-end justify-content-center" style="height:15%">
+                                <div class="col align-items-center justify-content-center">
+                                    <button class="btn btn-primary btn-lg invite-btn mb-4" v-on:click="inviteFriend">
+                                        Invite Friends!
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-7 text-center">
                             <div class="row align-items-center" style="height:15%">
                                 <div class="col text-center">
-                                    <h2>Click to Vote!</h2>
+                                    <h2>What To Doodle?</h2>
                                 </div>
                             </div>
-                            <div class="row align-items-start" style="height:85%">
+                            <div id="Terms" class="row align-items-start" style="height:85%">
                                 <div class="col text-center border-left">
                                     <ul class="list-group align-items-center">
-                                        <li id="Terms" v-for="term in lobbyTermsList" :key="term.term" class="li-element-term list-group-item d-flex justify-content-between align-items-center btn btn-outline-secondary" type="button" v-on:click="voteTerm(term.term)" :class="{disabled: showVoteButtons }">
+                                        <li id="Terms" v-for="term in lobbyTermsList" :key="term.term" class="li-element-term list-group-item d-flex justify-content-between align-items-center shadow" v-on:click="voteTerm(term.term)" :class="{disabled: showVoteButtons }">
                                             <h3 class="h3-override-term">{{term.term}}</h3>
                                             <span class=" badge-primary badge-pill">{{term.votes}}</span>
                                         </li>
-
                                     </ul>
                                 </div>
                             </div>
@@ -303,11 +300,11 @@
                 judgeActive: false,
                 lobbyPlayers: [],
                 lobbyTerms: [],
-                termVotes: 2,
+                termVotes: 1,
                 judgementVotes: 1,
                 playerVotes: 2,
                 lobbyCountDown: 30,
-                gameCountDown: 30,
+                gameCountDown: 45,
                 judgementCountDown: 10,
                 votingCountDown: 15,
                 finishedPlayers: [],
@@ -315,6 +312,7 @@
                 winnerVoted: false,
                 aiBrokeTie: false,
                 gameLoading: false,
+                isTie: false,
                 stopLobbyTimer: false,
                 winner: { Name: "" },
 
@@ -410,7 +408,8 @@
 
                         this.gameConnection.server.validateName(this.playerName);
                     }
-                    else {
+                    else
+                    {
                         $.alert({
                             title: 'No Name Entered',
                             type: 'red',
@@ -498,12 +497,13 @@
                 },
                 inviteFriend: function () {
                     $.confirm({
-                        title: 'Prompt!',
+                        title: 'Invite Your Friends',
+                        type: 'blue',
                         content: '' +
                             '<form action="" class="formName">' +
                             '<div class="form-group">' +
-                            '<label>Enter friends phone number here!</label>' +
-                            '<input type="text" placeholder="5555555555" class="number form-control" required />' +
+                            '<label>Enter your friends phone number here:</label>' +
+                            '<input type="text" placeholder="(555) 555-5555" class="number form-control" required />' +
                             '</div>' +
                             '</form>',
                         buttons: {
@@ -513,11 +513,11 @@
                                 action: function () {
                                     var number = this.$content.find('.number').val();
                                     if (!number) {
-                                        $.alert('provide a valid number');
+                                        $.alert('Please provide a valid number.');
                                         return false;
                                     }
                                     VUE.gameConnection.server.sendFriendInvite(number, VUE.playerName);
-                                    $.alert('Successfully invited friend at ' + number + '!');
+                                    $.alert('Successfully invited friend at ' + number + '.');
                                 }
                             },
                             cancel: function () {
@@ -583,11 +583,11 @@
                     VUE.judgeActive = false;
                     VUE.lobbyPlayers = [];
                     VUE.lobbyTerms = [];
-                    VUE.termVotes = 2;
+                    VUE.termVotes = 1;
                     VUE.judgementVotes = 1;
                     VUE.playerVotes = 2;
                     VUE.lobbyCountDown = 30;
-                    VUE.gameCountDown = 30;
+                    VUE.gameCountDown = 45;
                     VUE.judgementCountDown = 10;
                     VUE.votingCountDown = 15;
                     VUE.finishedPlayers = [];
@@ -629,7 +629,7 @@
                 this.gameConnection.client.playerRemovedFromLobby = function (name) {
                     VUE.lobbyPlayers.splice(VUE.lobbyPlayers.indexOf(name), 1);
 
-                    if (names.length < 2) {
+                    if (VUE.lobbyPlayers.length < 2) {
                         VUE.stopTimer = true;
                         VUE.lobbyCountDown = 30;
                     }

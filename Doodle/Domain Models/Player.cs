@@ -23,7 +23,7 @@ namespace Doodle.Domain_Models
         public double Votes = 0;
 
         [JsonIgnore]
-        public int TermVotes = 2;
+        public int TermVotes = 1;
 
         [JsonIgnore]
         public int JudgingVotes = 1;

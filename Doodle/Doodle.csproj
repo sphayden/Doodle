@@ -343,6 +343,7 @@
     <Content Include="Global.asax" />
     <Content Include="Images\Favicon.PNG" />
     <Content Include="Images\Logo3.PNG" />
+    <Content Include="Images\Logo5.PNG" />
     <Content Include="Scripts\app\_run.js" />
     <Content Include="Scripts\app\app.datamodel.js" />
     <Content Include="Scripts\app\app.viewmodel.js" />

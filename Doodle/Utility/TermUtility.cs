@@ -7,7 +7,7 @@ namespace Doodle.Utility
 {
     public class TermUtility
     {
-        public static List<string> Terms = new List<string> { "Mug", "Mouse", "Car", "Flower", "Smile" };
+        public static List<string> Terms = new List<string> { "Mug", "Smile", "Banana", "Apple", "Tree", "Mouse", "Bicycle", "House" };
 
         public static List<string> getShortListOfTerms()
         {

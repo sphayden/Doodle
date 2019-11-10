@@ -26,7 +26,7 @@ namespace Doodle.Domain_Models
         {
             GameID = Guid.NewGuid().ToString();
 
-            Timer.Interval = 30000;
+            Timer.Interval = 45000;
             ImageTimer.Interval = 2000;
             JudgementTimer.Interval = 10000;
             VoteTimer.Interval = 15000;

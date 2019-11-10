@@ -167,22 +167,41 @@
                 <div class="container-fluid" style="height:100vh">
                     <div class="row align-items-center" style="height:100vh">
                         <div class="col text-center">
-                            <h1 v-if="!winnerVoting">AI chose a winner.</h1>
-                            <h1 v-if="winnerVoting">Vote for a winner:</h1>
-                            <h1 v-if="aiBrokeTie">AI broke Tie!</h1>
-                            <div class="row">
+                            <div class="row justify-content-center mb-5">
+                                <h1 v-if="!winnerVoting && !winnerVoted">The AI Has Chosen The WINNER!</h1>
+                                <h1 v-if="winnerVoting">Click On Your Favorite Two Drawings:</h1>
+                                <h1 v-if="winnerVoted && !aiBrokeTie">A WINNER Has Been Chosen!</h1>
+                                <h1 v-if="aiBrokeTie">The AI Has Broken A Tie!</h1>
+                            </div>
+                            <div class="row justify-content-center">
                                 <div class="col text-center">
-                                    <div id="FinishedPlayers" v-for="player in finishedPlayers" v-on:click="votePlayer(player.Name)">
-                                        <h1>{{player.Name}}<span v-if="player.Name == winner.Name"> Winner!</span></h1>
-                                        <img :src="player.ImagePath" width="100" height="100" />
-                                        <h4 v-if="!winnerVoting || aiBrokeTie">Match: {{player.PercentageMatch}}</h4>
-                                        <h4 v-if="winnerVoting">Votes: {{player.Votes}}</h4>
+
+                                    <div id="FinishedPlayers" class="card-deck justify-content-center">
+                                        <div class="card shadow" :class="{winner: player.Name == winner.Name, animated: player.Name == winner.Name, slow: player.Name == winner.Name, tada: player.Name == winner.Name, 'disabled': player.Name == playerName, 'bg-success': player.Votes == 2 && !winnerVoted, 'bg-warning': player.Votes == 1 && !winnerVoted}" v-for="player in finishedPlayers" v-on:click="votePlayer(player)" style="max-width: 40rem;">
+                                            <img :src="player.ImagePath" class="card-img-top">
+                                            <div class="card-body">
+                                                <h2 class="card-title">{{player.Name}}</h2>
+                                                <p class="card-text" v-if="winnerVoted">Votes: {{player.Votes}}</p>
+                                                <div class="row justify-content-center align-items-center card-text" v-if="(!winnerVoting && !winnerVoted ) || aiBrokeTie ">
+                                                    <div class="col-lg-3">
+                                                        Match:
+                                                    </div>
+                                                    <div class="col-lg-9">
+                                                        <div class="progress mb-0">
+                                                            <div class="progress-bar" role="progressbar" :style="{width: player.PercentageMatch + '%'}">
+                                                                {{player.PercentageMatch}}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col text-center" v-if="winnerVoting">
-                                    Time Remaining: {{votingCountDown}}
+                                <div class="col text-center mt-4" v-if="winnerVoting">
+                                    <h3>Time Remaining: <strong class="h2" :class="votingCountDownStyle">{{votingCountDown}}</strong></h3>
                                 </div>
                             </div>
                         </div>
@@ -223,9 +242,10 @@
                 lobbyCountDown: 30,
                 gameCountDown: 30,
                 judgementCountDown: 10,
-                votingCountDown: 10,
+                votingCountDown: 20,
                 finishedPlayers: [],
                 winnerVoting: false,
+                winnerVoted: false,
                 aiBrokeTie: false,
                 winner: { Name: ""},
 
@@ -289,6 +309,13 @@
                 showVoteButtons: function ()
                 {
                     return this.termVotes == 0;
+                },
+                votingCountDownStyle: function ()
+                {
+                    return {
+                        'text-danger': this.votingCountDown < 4,
+                        'text-warning': this.votingCountDown < 5
+                    }
                 }
             },
 
@@ -355,10 +382,11 @@
                         this.gameConnection.server.votePeerJudgement(this.playerID);
                     }
                 },
-                votePlayer: function (playerName) {
+                votePlayer: function (player) {
                     if (this.playerVotes > 0 && this.winnerVoting) {
+                        player.Votes = this.playerVotes;
                         this.playerVotes--;
-                        this.gameConnection.server.votePlayer(this.playerID, playerName);
+                        this.gameConnection.server.votePlayer(this.playerID, player.Name);
                     }
                 },
 
@@ -424,6 +452,8 @@
                 this.gameConnection.client.displayWinner = function (winner, players) {
                     VUE.winner = winner;
                     VUE.finishedPlayers = players;
+                    VUE.winnerVoting = false;
+                    VUE.winnerVoted = true;
                 }
 
                 this.gameConnection.client.displayAIWinner = function (winner, players) {
@@ -435,6 +465,8 @@
 
                     if (VUE.winnerVoting) {
                         VUE.aiBrokeTie = true;
+                        VUE.winnerVoting = false;
+                        VUE.winnerVoted = true;
                     }
                 }
 

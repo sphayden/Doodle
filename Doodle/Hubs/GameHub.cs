@@ -171,7 +171,7 @@ namespace Doodle.Hubs
 
             game.VoteTimer.Stop();
 
-            int highestVotes = game.Players.OrderByDescending(p => p.Votes).First().Votes;
+            double highestVotes = game.Players.OrderByDescending(p => p.Votes).First().Votes;
 
             List<Player> topPlayers = game.Players.FindAll(p => p.Votes == highestVotes).ToList();
 
@@ -185,7 +185,8 @@ namespace Doodle.Hubs
             else
             {
                 Clients.Group(game.GameID).displayWinner(
-                       topPlayers.First()
+                       topPlayers.First(),
+                       game.Players
                    );
             }
         }
@@ -206,7 +207,7 @@ namespace Doodle.Hubs
                     if (p.PlayerVotes > 0)
                     {
                         Player votingFor = g.Players.Find(p1 => p1.Name == playerName);
-                        votingFor.Votes += (p.PlayerVotes / 2);
+                        votingFor.Votes += (p.PlayerVotes / 2.0);
                         p.PlayerVotes--;
                     }
                 }

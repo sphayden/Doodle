@@ -36,7 +36,7 @@ namespace Doodle.Controllers
             {
                 using (MemoryStream ms = new MemoryStream(blob))
                 {
-                    using (FileStream fs = new FileStream(path, FileMode.Create, System.IO.FileAccess.Write))
+                    using (FileStream fs = new FileStream(path, FileMode.OpenOrCreate, System.IO.FileAccess.Write))
                     {
                         ms.CopyTo(fs);
                         fs.Flush();

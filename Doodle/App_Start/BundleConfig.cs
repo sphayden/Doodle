@@ -39,6 +39,7 @@ namespace Doodle
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                  "~/Content/bootstrap.css",
+                  "~/Content/animate.css",
                  "~/Content/Site.min.css",
                  "~/Content/Title.min.css",
                  "~/Content/Lobby.min.css",
@@ -46,8 +47,6 @@ namespace Doodle
                  "~/Content/Judging.min.css",
                  "~/Content/Win.min.css"
                  ));
-
-            BundleTable.EnableOptimizations = false;
         }
     }
 }

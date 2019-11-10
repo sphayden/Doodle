@@ -20,7 +20,7 @@ namespace Doodle.Domain_Models
 
         public int PercentageMatch;
 
-        public int Votes = 0;
+        public double Votes = 0;
 
         [JsonIgnore]
         public int TermVotes = 2;

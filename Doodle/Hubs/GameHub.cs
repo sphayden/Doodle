@@ -206,6 +206,11 @@ namespace Doodle.Hubs
             return Convert.ToInt32(GoogleVisionApiData.GetImageData(term, imagePath) * 100);
         }
 
+        public void SendFriendInvite(String phoneNumber, String playerName)
+        {
+            TwilioImageSender.InvitePlayers(phoneNumber, playerName);
+        }
+
         public void VotePlayer(String playerID, String playerName)
         {
             Games.ForEach(g =>

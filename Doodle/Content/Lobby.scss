@@ -1,14 +1,48 @@
 ﻿.flip-list-move {
     transition: transform 1s;
 }
-.li-element {
-    height: 40px;
-    width: 80%;
-    margin: 4px;
+.li-element-player {
+    height:5vh;
+    width: 60%;
+    margin: 1vh;
     padding:5px;
 }
+.li-element-term {
+    height: 7vh;
+    width: 60%;
+    margin: 1.5vh;
+    padding: 1.5vh;
+}
+.progress-bar-override {
+    width:80%;
+}
+.h1-override {
+    height:80%;
+    font-size: 16px;
+    margin: 4px;
+    padding: 5px;
+    font-size: 10vh;
+}
+.h2-override {
+    height: 80%;
+    font-size: 16px;
+    margin: 4px;
+    padding: 5px;
+    font-size: 5vh;
+}
+.invite-btn {
+    height: 40px;
+    width: 40%;
+    margin: 4px;
+    padding: 5px;
+}
 .h3-override {
+    margin: 2px;
+    font-size: 3vh;
+}
+.h3-override-term {
 
     margin:2px;
-    font-size:24px;
+    font-size:5.5vh;
+    margin-left:1vw;
 }

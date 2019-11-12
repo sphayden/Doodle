@@ -297,7 +297,7 @@ namespace Doodle.Hubs
 
         public void SendFriendInvite(String phoneNumber, String playerName)
         {
-            TwilioImageSender.InvitePlayers(phoneNumber, playerName);
+            //response = TwilioImageSender.InvitePlayers(phoneNumber, playerName);
         }
 
         public void VotePlayer(String playerID, String playerName)

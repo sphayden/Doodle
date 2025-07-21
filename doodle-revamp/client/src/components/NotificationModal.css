@@ -1,0 +1,220 @@
+/* NotificationModal - Overlay notification system */
+.notification-modal {
+  z-index: 9999;
+}
+
+.notification-modal .modal-dialog {
+  max-width: 500px;
+  margin: 1.75rem auto;
+}
+
+.notification-modal .modal-content {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  overflow: hidden;
+  background: white;
+}
+
+/* Header Styles by Type */
+.notification-header {
+  border-bottom: none;
+  padding: 20px 25px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+}
+
+.notification-header.error {
+  background: linear-gradient(45deg, #dc3545, #c82333);
+}
+
+.notification-header.warning {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+  color: #212529;
+}
+
+.notification-header.success {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.notification-header.info {
+  background: linear-gradient(45deg, #17a2b8, #138496);
+}
+
+/* Title and Icon */
+.notification-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  display: inline-block;
+}
+
+/* Close Button */
+.close-btn {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 4px 8px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: inherit;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.5);
+  color: inherit;
+  transform: scale(1.1);
+}
+
+.close-btn:focus {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+  color: inherit;
+}
+
+/* Body */
+.notification-body {
+  padding: 20px 25px;
+}
+
+.notification-alert {
+  margin: 0;
+  border: none;
+  background: transparent;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.notification-alert.alert-danger {
+  background: rgba(220, 53, 69, 0.1);
+  color: #721c24;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.notification-alert.alert-warning {
+  background: rgba(255, 193, 7, 0.1);
+  color: #856404;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.notification-alert.alert-success {
+  background: rgba(40, 167, 69, 0.1);
+  color: #155724;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.notification-alert.alert-info {
+  background: rgba(23, 162, 184, 0.1);
+  color: #0c5460;
+  border: 1px solid rgba(23, 162, 184, 0.2);
+}
+
+/* Auto-close info */
+.auto-close-info {
+  text-align: center;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.auto-close-info small {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* Footer */
+.notification-footer {
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding: 15px 25px 20px;
+  background: rgba(0,0,0,0.02);
+  text-align: center;
+}
+
+.dismiss-btn {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.dismiss-btn:hover {
+  background: linear-gradient(45deg, #0056b3, #004085);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.dismiss-btn:focus {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .notification-modal .modal-dialog {
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+  
+  .notification-header,
+  .notification-body,
+  .notification-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .notification-title {
+    font-size: 1.2rem;
+  }
+  
+  .notification-icon {
+    font-size: 1.3rem;
+  }
+  
+  .notification-alert {
+    padding: 12px 15px;
+    font-size: 0.95rem;
+  }
+  
+  .dismiss-btn {
+    font-size: 0.95rem;
+    padding: 8px 25px;
+  }
+}
+
+/* Animation */
+.notification-modal .modal-dialog {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+} 

@@ -1,0 +1,341 @@
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.doodle {
+  position: absolute;
+  opacity: 0.8;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Positioning for different doodles */
+.doodle-house {
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.doodle-cat {
+  top: 60%;
+  right: 10%;
+  animation-delay: 2s;
+}
+
+.doodle-tree {
+  bottom: 20%;
+  left: 15%;
+  animation-delay: 4s;
+}
+
+.doodle-sun {
+  top: 15%;
+  right: 20%;
+  animation-delay: 1s;
+}
+
+.doodle-car {
+  bottom: 15%;
+  right: 5%;
+  animation-delay: 3s;
+}
+
+.doodle-flower {
+  top: 45%;
+  left: 8%;
+  animation-delay: 5s;
+}
+
+.doodle-abstract1 {
+  top: 30%;
+  right: 30%;
+  animation-delay: 6s;
+}
+
+.doodle-abstract2 {
+  bottom: 40%;
+  left: 35%;
+  animation-delay: 7s;
+}
+
+.doodle-star {
+  top: 25%;
+  left: 25%;
+  animation-delay: 8s;
+}
+
+.doodle-heart {
+  top: 70%;
+  left: 70%;
+  animation-delay: 9s;
+}
+
+.doodle-cloud {
+  top: 5%;
+  left: 60%;
+  animation-delay: 10s;
+}
+
+.doodle-lightning {
+  bottom: 60%;
+  right: 25%;
+  animation-delay: 11s;
+}
+
+.doodle-arrow {
+  top: 50%;
+  right: 15%;
+  animation-delay: 12s;
+}
+
+.doodle-spiral {
+  bottom: 25%;
+  left: 50%;
+  animation-delay: 13s;
+}
+
+.doodle-note {
+  top: 35%;
+  left: 45%;
+  animation-delay: 14s;
+}
+
+.doodle-diamond {
+  bottom: 55%;
+  left: 25%;
+  animation-delay: 15s;
+}
+
+.doodle-butterfly {
+  top: 15%;
+  left: 40%;
+  animation-delay: 16s;
+}
+
+.doodle-balloon {
+  bottom: 30%;
+  right: 40%;
+  animation-delay: 17s;
+}
+
+.doodle-gear {
+  top: 60%;
+  left: 15%;
+  animation-delay: 18s;
+}
+
+/* Drawing animation for SVG paths */
+.animated-path {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: draw 12s ease-in-out infinite;
+}
+
+/* Stagger the drawing animations */
+.doodle-house .animated-path { animation-delay: 0s; }
+.doodle-sun .animated-path { animation-delay: 1s; }
+.doodle-cat .animated-path { animation-delay: 2s; }
+.doodle-car .animated-path { animation-delay: 3s; }
+.doodle-tree .animated-path { animation-delay: 4s; }
+.doodle-flower .animated-path { animation-delay: 5s; }
+.doodle-abstract1 .animated-path { animation-delay: 6s; }
+.doodle-abstract2 .animated-path { animation-delay: 7s; }
+.doodle-star .animated-path { animation-delay: 8s; }
+.doodle-heart .animated-path { animation-delay: 9s; }
+.doodle-cloud .animated-path { animation-delay: 10s; }
+.doodle-lightning .animated-path { animation-delay: 11s; }
+.doodle-arrow .animated-path { animation-delay: 12s; }
+.doodle-spiral .animated-path { animation-delay: 13s; }
+.doodle-note .animated-path { animation-delay: 14s; }
+.doodle-diamond .animated-path { animation-delay: 15s; }
+.doodle-butterfly .animated-path { animation-delay: 16s; }
+.doodle-balloon .animated-path { animation-delay: 17s; }
+.doodle-gear .animated-path { animation-delay: 18s; }
+
+/* Drawing animation */
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 800;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  45% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+  100% {
+    stroke-dashoffset: -800;
+    opacity: 0;
+  }
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translate(25px, -30px) rotate(8deg) scale(1.15);
+  }
+  50% {
+    transform: translate(-20px, -35px) rotate(-5deg) scale(0.85);
+  }
+  75% {
+    transform: translate(-30px, 20px) rotate(6deg) scale(1.08);
+  }
+}
+
+/* Different animation speeds for variety */
+.doodle:nth-child(odd) {
+  animation-duration: 8s;
+}
+
+.doodle:nth-child(even) {
+  animation-duration: 10s;
+}
+
+.doodle:nth-child(3n) {
+  animation-duration: 7s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .doodle {
+    width: 80px !important;
+    height: 80px !important;
+  }
+  
+  .doodle-house,
+  .doodle-car {
+    width: 100px !important;
+    height: 100px !important;
+  }
+}
+
+/* Fade in/out on screen edges */
+.doodle-house,
+.doodle-tree,
+.doodle-flower {
+  animation: fadeFloat 12s ease-in-out infinite;
+}
+
+/* Additional movement animations for more dynamic effect */
+.doodle-cat,
+.doodle-sun {
+  animation: bounce 8s ease-in-out infinite;
+}
+
+.doodle-car,
+.doodle-abstract1 {
+  animation: wiggle 6s ease-in-out infinite;
+}
+
+.doodle-abstract2 {
+  animation: pulse 5s ease-in-out infinite;
+}
+
+/* Assign different animations to new doodles */
+.doodle-star,
+.doodle-lightning,
+.doodle-gear {
+  animation: bounce 9s ease-in-out infinite;
+}
+
+.doodle-heart,
+.doodle-balloon,
+.doodle-butterfly {
+  animation: float 8s ease-in-out infinite;
+}
+
+.doodle-cloud,
+.doodle-spiral,
+.doodle-diamond {
+  animation: fadeFloat 14s ease-in-out infinite;
+}
+
+.doodle-arrow,
+.doodle-note {
+  animation: wiggle 7s ease-in-out infinite;
+}
+
+@keyframes fadeFloat {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translate(-20px, 20px) scale(0.8);
+  }
+  10%, 90% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Bounce animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-20px) scale(1.1) rotate(3deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-10px) scale(0.95) rotate(-2deg);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-15px) scale(1.05) rotate(1deg);
+    opacity: 0.9;
+  }
+}
+
+/* Wiggle animation */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1) translateX(0);
+    opacity: 0.8;
+  }
+  25% {
+    transform: rotate(5deg) scale(1.05) translateX(5px);
+    opacity: 0.9;
+  }
+  50% {
+    transform: rotate(-3deg) scale(0.95) translateX(-3px);
+    opacity: 1;
+  }
+  75% {
+    transform: rotate(4deg) scale(1.02) translateX(2px);
+    opacity: 0.85;
+  }
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+} 

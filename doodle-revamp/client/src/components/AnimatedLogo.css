@@ -1,0 +1,157 @@
+.animated-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.animated-logo {
+  animation: logoAppear 0.5s ease-in-out;
+}
+
+/* Circle drawing animation */
+.logo-circle {
+  stroke-dasharray: 754; /* Circumference of circle (2 * π * 120) */
+  stroke-dashoffset: 754;
+  animation: drawCircle 4s ease-in-out infinite;
+  transform-origin: 150px 150px;
+}
+
+/* Paint stroke that follows the brush */
+.paint-stroke {
+  stroke-dasharray: 754;
+  stroke-dashoffset: 754;
+  animation: paintStroke 4s ease-in-out infinite;
+  transform-origin: 150px 150px;
+}
+
+/* Paintbrush animation - moves around circle then to center */
+.paintbrush {
+  transform-origin: 150px 150px;
+  animation: brushMovement 4s ease-in-out infinite;
+}
+
+/* Paint tip pulsing effect */
+.paint-tip {
+  animation: paintTipPulse 4s ease-in-out infinite;
+}
+
+/* Logo appearance */
+@keyframes logoAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Circle drawing animation */
+@keyframes drawCircle {
+  0% {
+    stroke-dashoffset: 754;
+    opacity: 0.3;
+  }
+  25% {
+    stroke-dashoffset: 377; /* Half drawn */
+    opacity: 0.7;
+  }
+  50% {
+    stroke-dashoffset: 0; /* Fully drawn */
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.8;
+  }
+}
+
+/* Paint stroke following the brush */
+@keyframes paintStroke {
+  0% {
+    stroke-dashoffset: 754;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 0.4;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.2;
+  }
+}
+
+/* Brush movement around circle then to center */
+@keyframes brushMovement {
+  0% {
+    transform: rotate(0deg) translateX(140px) rotate(0deg);
+  }
+  25% {
+    transform: rotate(90deg) translateX(140px) rotate(-90deg);
+  }
+  50% {
+    transform: rotate(180deg) translateX(140px) rotate(-180deg);
+  }
+  65% {
+    transform: rotate(270deg) translateX(140px) rotate(-270deg);
+  }
+  75% {
+    transform: rotate(360deg) translateX(140px) rotate(-360deg);
+  }
+  85% {
+    transform: rotate(360deg) translateX(70px) rotate(-360deg) scale(0.8);
+  }
+  100% {
+    transform: rotate(360deg) translateX(0px) rotate(-360deg) scale(0.7);
+  }
+}
+
+/* Paint tip pulsing */
+@keyframes paintTipPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  25%, 75% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+/* Hover effect */
+.animated-logo-container:hover .animated-logo {
+  animation-duration: 2s;
+}
+
+.animated-logo-container:hover .logo-circle,
+.animated-logo-container:hover .paint-stroke,
+.animated-logo-container:hover .paintbrush,
+.animated-logo-container:hover .paint-tip {
+  animation-duration: 2s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .animated-logo {
+    width: 150px;
+    height: 150px;
+  }
+} 

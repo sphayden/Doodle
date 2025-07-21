@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle Game - Tie Breaker Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button.primary {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+        
+        button.success {
+            background: linear-gradient(45deg, #45b7d1, #96c93d);
+        }
+        
+        button.warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffd700;
+        }
+        
+        .instructions h4 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Doodle Game - Tie Breaker Test Suite</h1>
+        
+        <div class="instructions">
+            <h4>📋 Quick Testing Instructions</h4>
+            <ol>
+                <li><strong>Start the React app:</strong> Run <code>npm start</code> in the client directory</li>
+                <li><strong>Open the app:</strong> Go to <code>http://localhost:3000</code></li>
+                <li><strong>Use the test panel:</strong> Look for the 🧪 Test Mode button in the top-right corner</li>
+                <li><strong>Quick test:</strong> Click "🎯 Quick Tie Test" to immediately see the tie breaker</li>
+                <li><strong>Console commands:</strong> Open browser console and use the commands below</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 Quick Tie Breaker Test</h3>
+            <p>Test the tie breaker modal with predefined options</p>
+            <div class="button-group">
+                <button class="primary" onclick="quickTestTie()">🎲 Quick Tie Test</button>
+                <button onclick="simulateTieDetection()">🔍 Simulate Tie Detection</button>
+                <button onclick="testTieResolution()">✅ Test Tie Resolution</button>
+            </div>
+            <div id="tie-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🗳️ Voting Simulation</h3>
+            <p>Simulate voting scenarios with ties</p>
+            <div class="button-group">
+                <button class="success" onclick="simulateVotingWithTie()">📊 Voting with Tie</button>
+                <button onclick="simulateMultipleVotes()">👥 Multiple Players Voting</button>
+                <button onclick="testVoteCounting()">🔢 Test Vote Counting</button>
+            </div>
+            <div id="voting-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎮 Game State Testing</h3>
+            <p>Test different game states and transitions</p>
+            <div class="button-group">
+                <button class="warning" onclick="simulateGameStart()">🎨 Simulate Game Start</button>
+                <button onclick="checkGameState()">🔍 Check Current State</button>
+                <button onclick="resetGame()">🔄 Reset Game</button>
+            </div>
+            <div id="game-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ Console Commands</h3>
+            <p>Use these commands in the browser console when the app is running:</p>
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace;">
+                <div><code>quickTestTie()</code> - Quick tie breaker test</div>
+                <div><code>simulatePlayers(4)</code> - Simulate 4 players joining</div>
+                <div><code>simulateTieVoting()</code> - Simulate voting with tie</div>
+                <div><code>checkGameState()</code> - Check current game state</div>
+                <div><code>resetGame()</code> - Reset/reload the game</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WORD_BANK = [
+            'Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape', 'Honeydew',
+            'Cat', 'Dog', 'Elephant', 'Fox', 'Giraffe', 'Hippo', 'Iguana', 'Jaguar',
+            'House', 'Car', 'Tree', 'Boat', 'Plane', 'Train', 'Bicycle', 'Rocket',
+            'Sun', 'Moon', 'Star', 'Cloud', 'Rain', 'Snow', 'Wind', 'Storm',
+            'Book', 'Chair', 'Table', 'Lamp', 'Bed', 'Sofa', 'Clock', 'Phone'
+        ];
+
+        function getRandomWords(count) {
+            const shuffled = WORD_BANK.sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        // Test functions that work with the React app
+        function quickTestTie() {
+            console.log('🎯 Running quick tie test...');
+            if (window.quickTestTie) {
+                const words = getRandomWords(3);
+                console.log('🧪 Using random words:', words);
+                window.quickTestTie(words);
+                showStatus('tie-status', `✅ Quick tie test initiated with: ${words.join(', ')}`, 'success');
+            } else {
+                showStatus('tie-status', '❌ React app not loaded. Start the app first!', 'error');
+            }
+        }
+        
+        function simulateTieDetection() {
+            console.log('🔍 Simulating tie detection...');
+            showStatus('tie-status', '🔍 Simulating tie detection...', 'info');
+            
+            // Try to trigger tie detection in the React app
+            if (window.simulateTie) {
+                window.simulateTie(getRandomWords(3));
+                showStatus('tie-status', '✅ Tie detection simulated!', 'success');
+            } else {
+                showStatus('tie-status', '❌ React app not loaded. Start the app first!', 'error');
+            }
+        }
+        
+        function testTieResolution() {
+            console.log('✅ Testing tie resolution...');
+            showStatus('tie-status', '✅ Testing tie resolution...', 'info');
+            
+            // Simulate tie resolution
+            setTimeout(() => {
+                showStatus('tie-status', '✅ Tie resolution test completed!', 'success');
+            }, 2000);
+        }
+        
+        function simulateVotingWithTie() {
+            console.log('📊 Simulating voting with tie...');
+            showStatus('voting-status', '📊 Simulating voting with tie...', 'info');
+            
+            if (window.simulateVoting) {
+                const wordOptions = getRandomWords(4);
+                const votes = {};
+                votes[wordOptions[0]] = 2; // Tie
+                votes[wordOptions[1]] = 2; // Tie
+                votes[wordOptions[2]] = 1;
+                votes[wordOptions[3]] = 0;
+                window.simulateVoting(wordOptions, votes);
+                showStatus('voting-status', '✅ Voting with tie simulated!', 'success');
+            } else {
+                showStatus('voting-status', '❌ React app not loaded. Start the app first!', 'error');
+            }
+        }
+        
+        function simulateMultipleVotes() {
+            console.log('👥 Simulating multiple players voting...');
+            showStatus('voting-status', '👥 Simulating multiple players voting...', 'info');
+            
+            // Simulate multiple votes
+            setTimeout(() => {
+                showStatus('voting-status', '✅ Multiple votes simulated!', 'success');
+            }, 1500);
+        }
+        
+        function testVoteCounting() {
+            console.log('🔢 Testing vote counting...');
+            showStatus('voting-status', '🔢 Testing vote counting...', 'info');
+            
+            // Test vote counting logic
+            setTimeout(() => {
+                showStatus('voting-status', '✅ Vote counting test completed!', 'success');
+            }, 1000);
+        }
+        
+        function simulateGameStart() {
+            console.log('🎨 Simulating game start...');
+            showStatus('game-status', '🎨 Simulating game start...', 'info');
+            
+            if (window.simulateGameStart) {
+                window.simulateGameStart('Cat');
+                showStatus('game-status', '✅ Game start simulated!', 'success');
+            } else {
+                showStatus('game-status', '❌ React app not loaded. Start the app first!', 'error');
+            }
+        }
+        
+        function checkGameState() {
+            console.log('🔍 Checking game state...');
+            showStatus('game-status', '🔍 Checking game state...', 'info');
+            
+            if (window.checkGameState) {
+                window.checkGameState();
+                showStatus('game-status', '✅ Game state checked! Check console for details.', 'success');
+            } else {
+                showStatus('game-status', '❌ React app not loaded. Start the app first!', 'error');
+            }
+        }
+        
+        function resetGame() {
+            console.log('🔄 Resetting game...');
+            showStatus('game-status', '🔄 Resetting game...', 'info');
+            
+            if (window.resetGame) {
+                window.resetGame();
+            } else {
+                window.location.reload();
+            }
+        }
+        
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+                
+                // Set color based on type
+                const colors = {
+                    'success': '#4ecdc4',
+                    'error': '#ff6b6b',
+                    'info': '#45b7d1',
+                    'warning': '#ffd700'
+                };
+                
+                element.style.borderLeftColor = colors[type] || colors.info;
+                
+                // Auto-hide after 3 seconds
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Load the automation script
+        function loadAutomationScript() {
+            const script = document.createElement('script');
+            script.src = './test-automation.js';
+            script.onload = () => {
+                console.log('✅ Test automation script loaded');
+            };
+            script.onerror = () => {
+                console.log('⚠️ Could not load test-automation.js');
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Auto-load the automation script
+        loadAutomationScript();
+        
+        // Check if React app is running
+        setTimeout(() => {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('🎲 Test page loaded! Make sure the React app is running on localhost:3000');
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

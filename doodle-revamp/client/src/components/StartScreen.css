@@ -1,0 +1,184 @@
+/* StartScreen - Modern Responsive Design */
+.start-screen {
+  background-color: #0b63af;
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.start-screen .container-fluid {
+  padding-top: min(5vh, 2rem);
+  padding-bottom: min(3vh, 1rem);
+}
+
+/* Logo Section */
+.logo-section {
+  position: relative;
+  z-index: 2;
+}
+
+.logo-responsive {
+  max-width: 100%;
+  height: auto;
+  width: clamp(200px, 50vw, 400px);
+  filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+  transition: transform 0.3s ease;
+}
+
+.logo-responsive:hover {
+  transform: scale(1.05);
+}
+
+.subtitle-text {
+  color: white;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Error Alert */
+.error-alert {
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 193, 7, 0.9);
+  color: #212529;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Combined Start Game Section */
+.start-game-section {
+  position: relative;
+  z-index: 2;
+}
+
+.name-input {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 3px solid rgba(255, 255, 255, 0.3) !important;
+  color: #333 !important;
+  text-align: center;
+  font-weight: bold;
+  font-size: clamp(1.1rem, 2.8vw, 1.6rem) !important;
+  letter-spacing: 1px;
+  border-radius: 15px !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+  transition: all 0.3s ease;
+  padding: clamp(12px, 2vw, 18px) !important;
+}
+
+.name-input::placeholder {
+  color: #999 !important;
+  font-size: clamp(0.9rem, 2.2vw, 1.3rem) !important;
+  font-weight: normal;
+}
+
+.name-input:focus {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25), 0 8px 20px rgba(0,0,0,0.3) !important;
+  transform: translateY(-2px);
+}
+
+/* Helper text for name input */
+.helper-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+  font-weight: 500;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+
+/* Game Buttons */
+.game-btn {
+  padding: clamp(15px, 3vw, 25px) clamp(20px, 4vw, 40px) !important;
+  font-size: clamp(1rem, 2.5vw, 1.4rem) !important;
+  font-weight: bold;
+  border-radius: 15px !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none !important;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.host-btn {
+  background: linear-gradient(45deg, #28a745, #20c997) !important;
+}
+
+.host-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4) !important;
+  background: linear-gradient(45deg, #218838, #1e7e34) !important;
+}
+
+.join-btn {
+  background: linear-gradient(45deg, #17a2b8, #138496) !important;
+}
+
+.join-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4) !important;
+  background: linear-gradient(45deg, #138496, #117a8b) !important;
+}
+
+
+/* Responsive Design */
+@media (max-width: 576px) {
+  .start-screen .container-fluid {
+    padding-top: min(3vh, 1rem);
+    padding-bottom: min(2vh, 0.5rem);
+  }
+  
+  .game-btn {
+    margin-bottom: 15px;
+    min-height: 50px;
+  }
+  
+  .name-input {
+    font-size: 1.2rem !important;
+    letter-spacing: 1px;
+  }
+  
+  .continue-btn {
+    min-width: 160px;
+  }
+}
+
+@media (max-width: 400px) {
+  .subtitle-text {
+    font-size: 0.9rem;
+  }
+  
+  .name-input {
+    font-size: 1rem !important;
+    padding: 10px !important;
+  }
+  
+  .game-btn {
+    min-height: 45px;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .start-screen .container-fluid {
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+  }
+  
+  .logo-responsive {
+    width: clamp(150px, 30vw, 250px);
+  }
+  
+  .subtitle-text {
+    font-size: 1rem;
+  }
+}

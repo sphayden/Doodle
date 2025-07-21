@@ -1,0 +1,170 @@
+#VotingScreen {
+  background-color: #0b63af;
+  color: white;
+}
+
+.li-element-term {
+  height: 7vh;
+  width: 60%;
+  margin: 1.5vh;
+  padding: 1.5vh;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.li-element-term:hover {
+  transform: scale(1.05);
+  box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+  background-color: rgba(255, 255, 255, 0.95);
+  transition: 1s;
+}
+
+.li-element-term:active {
+  transform: scale(0.98);
+}
+
+.h3-override-term {
+  margin: 2px;
+  font-size: 5.5vh;
+  margin-left: 1vw;
+  color: #333;
+  font-weight: bold;
+}
+
+.badge-primary {
+  background-color: #007bff;
+  font-size: 1.2rem;
+  padding: 8px 12px;
+  border-radius: 20px;
+  min-width: 40px;
+}
+
+.voting-info {
+  margin-top: 30px;
+}
+
+.voting-info p {
+  font-size: 1.3rem;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.logo-image-small {
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+  margin: 10px 0;
+  filter: drop-shadow(0 0 15px rgba(255,255,255,0.2));
+}
+
+.vote-title {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: bold;
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+  margin: 20px 0;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .vote-title {
+    font-size: 2.8rem;
+    margin: 15px 0;
+  }
+
+  .logo-image-small {
+    max-width: 200px;
+  }
+
+  .li-element-term {
+    width: 80%;
+    height: 8vh;
+    margin: 2vh;
+    padding: 2vh;
+  }
+
+  .h3-override-term {
+    font-size: 4.5vh;
+    margin-left: 2vw;
+  }
+
+  .badge-primary {
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    min-width: 35px;
+  }
+
+  .voting-info p {
+    font-size: 1.2rem;
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .vote-title {
+    font-size: 2.2rem;
+    margin: 10px 0;
+  }
+
+  .logo-image-small {
+    max-width: 150px;
+  }
+
+  .li-element-term {
+    width: 90%;
+    height: 9vh;
+    margin: 1.5vh;
+    padding: 1.5vh;
+  }
+
+  .h3-override-term {
+    font-size: 3.8vh;
+    margin-left: 3vw;
+  }
+
+  .badge-primary {
+    font-size: 1rem;
+    padding: 5px 8px;
+    min-width: 30px;
+  }
+
+  .voting-info p {
+    font-size: 1.1rem;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .vote-title {
+    font-size: 1.8rem;
+  }
+
+  .logo-image-small {
+    max-width: 120px;
+  }
+
+  .li-element-term {
+    width: 95%;
+    height: 10vh;
+    margin: 1vh;
+  }
+
+  .h3-override-term {
+    font-size: 3.2vh;
+    margin-left: 2vw;
+  }
+
+  .badge-primary {
+    font-size: 0.9rem;
+    padding: 4px 6px;
+    min-width: 25px;
+  }
+
+  .voting-info p {
+    font-size: 1rem;
+    padding: 0 5px;
+  }
+}

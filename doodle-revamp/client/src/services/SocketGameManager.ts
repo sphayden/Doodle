@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-// Interfaces that match the original P2PGameManager
+// Game interfaces for Socket.io-based multiplayer implementation
 export interface Player {
   id: string;
   name: string;
@@ -166,7 +166,7 @@ export class SocketGameManager {
     this.onStateChange(newState);
   }
 
-  // Public API methods (matching P2PGameManager interface)
+  // Public API methods for game management
 
   /**
    * Host a new game
@@ -298,25 +298,15 @@ export class SocketGameManager {
   }
 
   /**
-   * Handle tie resolution (compatibility with existing code)
-   */
-  handleTieResolution(selectedOption: string): void {
-    // In server architecture, ties are handled automatically by random selection
-    // This method exists for compatibility but doesn't need to do anything
-    console.log('Tie resolution handled by server:', selectedOption);
-    
-    if (this.tieBreakerCallbacks?.onTieResolved) {
-      this.tieBreakerCallbacks.onTieResolved(selectedOption);
-    }
-  }
-
-  /**
-   * Finish drawing (mark as done)
+   * Mark drawing as finished (notifies server)
    */
   finishDrawing(): void {
-    // In this implementation, drawings are submitted when complete
-    // This method exists for compatibility
-    console.log('Drawing finished');
+    if (!this.socket) {
+      console.error('Cannot finish drawing: socket not connected');
+      return;
+    }
+
+    this.socket.emit('finish-drawing', { roomCode: this.currentRoomCode });
   }
 
   // Utility methods

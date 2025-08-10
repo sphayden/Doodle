@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'P2P Doodle Game Server' });
+  res.json({ status: 'ok', message: 'Static File Server (Legacy)' });
 });
 
 // Serve the React app for any other routes
@@ -23,7 +23,7 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('This server is only for static file serving.');
-  console.log('All game logic runs P2P between clients.');
+  console.log(`Static file server running on port ${PORT}`);
+  console.log('⚠️  WARNING: This is a legacy static file server.');
+  console.log('🎮 For the actual game server, run the Socket.io server in /server/ directory on port 3001');
 }); 

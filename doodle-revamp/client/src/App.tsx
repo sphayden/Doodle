@@ -10,32 +10,30 @@ import { SocketGameManager, GameState as SocketGameState, TieBreakerCallbacks } 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-interface GameState {
+interface AppState {
   currentScreen: 'start' | 'join' | 'lobby' | 'voting' | 'game' | 'results';
   playerName: string;
   gameManager: SocketGameManager | null;
-  socketGameState: SocketGameState | null;
+  gameState: SocketGameState | null;
   isHost: boolean;
   roomCode: string;
   error: string;
   isConnecting: boolean;
-  showGameOptions: boolean;
   showTieBreaker: boolean;
   tiedOptions: string[];
   winningWord: string;
 }
 
 function App() {
-  const [gameState, setGameState] = useState<GameState>({
+  const [appState, setAppState] = useState<AppState>({
     currentScreen: 'start',
     playerName: '',
     gameManager: null,
-    socketGameState: null,
+    gameState: null,
     isHost: false,
     roomCode: '',
     error: '',
     isConnecting: false,
-    showGameOptions: false,
     showTieBreaker: false,
     tiedOptions: [],
     winningWord: ''
@@ -44,28 +42,28 @@ function App() {
   useEffect(() => {
     return () => {
       // Cleanup on unmount
-      if (gameState.gameManager) {
-        gameState.gameManager.destroy();
+      if (appState.gameManager) {
+        appState.gameManager.destroy();
       }
     };
-  }, [gameState.gameManager]);
+  }, [appState.gameManager]);
 
-  const handleSocketGameStateChange = (socketState: SocketGameState) => {
-    setGameState(prev => ({
+  const handleGameStateChange = (gameState: SocketGameState) => {
+    setAppState(prev => ({
       ...prev,
-      socketGameState: socketState,
-      roomCode: socketState.roomCode,
-      currentScreen: socketState.gamePhase === 'lobby' ? 'lobby' : 
-                     socketState.gamePhase === 'voting' ? 'voting' :
-                     socketState.gamePhase === 'drawing' ? 'game' :
-                     socketState.gamePhase === 'results' ? 'results' : 'lobby'
+      gameState: gameState,
+      roomCode: gameState.roomCode,
+      currentScreen: gameState.gamePhase === 'lobby' ? 'lobby' : 
+                     gameState.gamePhase === 'voting' ? 'voting' :
+                     gameState.gamePhase === 'drawing' ? 'game' :
+                     gameState.gamePhase === 'results' ? 'results' : 'lobby'
     }));
   };
 
   const hostGame = async (playerName: string) => {
     console.log('hostGame called with playerName:', playerName);
     try {
-      setGameState(prev => ({ 
+      setAppState(prev => ({ 
         ...prev, 
         playerName, 
         isConnecting: true, 
@@ -77,23 +75,22 @@ function App() {
         onTieDetected: handleTieDetected,
         onTieResolved: handleTieResolved
       };
-      const gameManager = new SocketGameManager(handleSocketGameStateChange, tieBreakerCallbacks);
+      const gameManager = new SocketGameManager(handleGameStateChange, tieBreakerCallbacks);
       console.log('Calling hostGame...');
       const roomCode = await gameManager.hostGame(playerName);
       console.log('Host game successful, roomCode:', roomCode);
 
-      setGameState(prev => ({
+      setAppState(prev => ({
         ...prev,
         gameManager,
         isHost: true,
         roomCode,
         currentScreen: 'lobby',
-        isConnecting: false,
-        showGameOptions: false
+        isConnecting: false
       }));
     } catch (error) {
       console.error('Error hosting game:', error);
-      setGameState(prev => ({
+      setAppState(prev => ({
         ...prev,
         error: 'Failed to host game. Please try again.',
         isConnecting: false
@@ -102,22 +99,21 @@ function App() {
   };
 
   const showJoinGame = (playerName: string) => {
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       playerName,
       currentScreen: 'join',
       error: '',
       gameManager: null,
-      socketGameState: null,
+      gameState: null,
       roomCode: '',
-      isConnecting: false,
-      showGameOptions: false
+      isConnecting: false
     }));
   };
 
   const joinGame = async (roomCode: string) => {
     try {
-      setGameState(prev => ({ 
+      setAppState(prev => ({ 
         ...prev, 
         isConnecting: true, 
         error: '' 
@@ -127,21 +123,20 @@ function App() {
         onTieDetected: handleTieDetected,
         onTieResolved: handleTieResolved
       };
-      const gameManager = new SocketGameManager(handleSocketGameStateChange, tieBreakerCallbacks);
-      await gameManager.joinGame(gameState.playerName, roomCode);
+      const gameManager = new SocketGameManager(handleGameStateChange, tieBreakerCallbacks);
+      await gameManager.joinGame(appState.playerName, roomCode);
 
-      setGameState(prev => ({
+      setAppState(prev => ({
         ...prev,
         gameManager,
         isHost: false,
         roomCode,
         currentScreen: 'lobby',
-        isConnecting: false,
-        showGameOptions: false
+        isConnecting: false
       }));
     } catch (error) {
       console.error('Error joining game:', error);
-      setGameState(prev => ({
+      setAppState(prev => ({
         ...prev,
         error: 'Failed to join game. Check the room code and try again.',
         isConnecting: false
@@ -150,17 +145,16 @@ function App() {
   };
 
   const backToStart = () => {
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       currentScreen: 'start',
       error: '',
-      isConnecting: false,
-      showGameOptions: false
+      isConnecting: false
     }));
   };
 
   const clearError = () => {
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       error: ''
     }));
@@ -168,7 +162,7 @@ function App() {
 
   const handleTieDetected = (tiedOptions: string[], winningWord: string) => {
     console.log('🎲 [APP] handleTieDetected called with options:', tiedOptions, 'winning word:', winningWord);
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       showTieBreaker: true,
       tiedOptions,
@@ -178,7 +172,7 @@ function App() {
 
   const handleTieResolved = (selectedOption: string) => {
     console.log('🎲 [APP] handleTieResolved called with option:', selectedOption);
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       showTieBreaker: false,
       tiedOptions: []
@@ -186,35 +180,35 @@ function App() {
   };
 
   const startVoting = () => {
-    if (gameState.gameManager) {
-      gameState.gameManager.startVoting();
+    if (appState.gameManager) {
+      appState.gameManager.startVoting();
     }
   };
 
   const voteForWord = (word: string) => {
-    if (gameState.gameManager) {
-      gameState.gameManager.voteForWord(word);
+    if (appState.gameManager) {
+      appState.gameManager.voteForWord(word);
     }
   };
 
   const handleTieSelectionComplete = (selectedOption: string) => {
     console.log('🎲 [APP] Tie selection complete, chosen word:', selectedOption);
-    if (gameState.gameManager) {
-      gameState.gameManager.resolveTiebreaker(selectedOption);
+    if (appState.gameManager) {
+      appState.gameManager.resolveTiebreaker(selectedOption);
     }
     // Hide the modal
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       showTieBreaker: false,
       tiedOptions: []
     }));
   };
 
-  // Test simulation functions
+  // Test simulation functions (moved to DevTools)
   const simulateTie = (tiedOptions: string[]) => {
     console.log('🧪 [APP] Simulating tie with options:', tiedOptions);
     const winningWord = tiedOptions[Math.floor(Math.random() * tiedOptions.length)];
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
       showTieBreaker: true,
       tiedOptions,
@@ -224,8 +218,7 @@ function App() {
 
   const simulateVoting = (wordOptions: string[], votes: { [word: string]: number }) => {
     console.log('🧪 [APP] Simulating voting scenario');
-    // Create a mock game state for testing
-    const mockSocketState: SocketGameState = {
+    const mockGameState: SocketGameState = {
       roomCode: 'TEST123',
       players: [
         { id: '1', name: 'Test Player 1', ready: true, score: 0 },
@@ -243,16 +236,16 @@ function App() {
       aiResults: []
     };
     
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
-      socketGameState: mockSocketState,
+      gameState: mockGameState,
       currentScreen: 'voting'
     }));
   };
 
   const simulateGameStart = (word: string) => {
     console.log('🧪 [APP] Simulating game start with word:', word);
-    const mockSocketState: SocketGameState = {
+    const mockGameState: SocketGameState = {
       roomCode: 'TEST123',
       players: [
         { id: '1', name: 'Test Player 1', ready: true, score: 0 },
@@ -270,9 +263,9 @@ function App() {
       aiResults: []
     };
     
-    setGameState(prev => ({
+    setAppState(prev => ({
       ...prev,
-      socketGameState: mockSocketState,
+      gameState: mockGameState,
       currentScreen: 'game'
     }));
   };

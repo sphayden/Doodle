@@ -5,11 +5,11 @@
 
 ### Current State
 - Legacy ASP.NET MVC application with SignalR (in `/Doodle/` folder)
-- New React/Node.js revamp (in `/doodle-revamp/` folder) with P2P implementation
-- **MIGRATION IN PROGRESS**: Moving from P2P to dedicated server architecture
+- New React/Node.js revamp (in `/doodle-revamp/` folder) with Socket.io implementation
+- **ARCHITECTURE UNIFIED**: Using Socket.io-based server architecture
 
 - The Legacy code is the initial application 6 years ago. 
-- in `/doodle-revamp/` contains P2P client game that is being migrated to server-based architecture.
+- in `/doodle-revamp/` contains Socket.io-based client-server game architecture.
 
 ### End Goal
 A browser-based multiplayer drawing game inspired by skribbl.io's infrastructure where ALL players draw the same word simultaneously, and an AI judges which drawing best represents the word. The game features real-time drawing, AI-powered evaluation, and competitive scoring.

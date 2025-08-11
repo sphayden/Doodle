@@ -1,0 +1,181 @@
+.reconnection-modal .modal-dialog {
+  max-width: 500px;
+}
+
+.reconnection-header {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.reconnection-header .modal-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.reconnection-icon {
+  font-size: 1.4rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reconnection-body {
+  padding: 1.5rem;
+}
+
+.reconnection-status {
+  text-align: center;
+}
+
+.attempt-info {
+  margin-bottom: 1rem;
+}
+
+.attempt-text {
+  font-weight: 500;
+  color: #495057;
+}
+
+.countdown-text {
+  font-size: 0.9em;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+.final-attempt-alert {
+  border: none;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.reconnection-message {
+  text-align: left;
+}
+
+.connection-tips {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 0.375rem;
+  border-left: 3px solid #17a2b8;
+}
+
+.tips-list {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.25rem;
+}
+
+.tips-list li {
+  margin-bottom: 0.25rem;
+  color: #6c757d;
+}
+
+.tips-list li:last-child {
+  margin-bottom: 0;
+}
+
+.reconnection-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 1.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.retry-now-btn {
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+}
+
+.retry-now-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Pulsing animation for progress bar */
+.progress-bar-animated.progress-bar-striped {
+  animation: progress-bar-stripes 1s linear infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Modal entrance animation */
+.reconnection-modal .modal-content {
+  animation: reconnectionModalSlideIn 0.3s ease-out;
+}
+
+@keyframes reconnectionModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .reconnection-modal .modal-dialog {
+    margin: 1rem;
+    max-width: none;
+  }
+  
+  .reconnection-body {
+    padding: 1rem;
+  }
+  
+  .reconnection-footer {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .reconnection-footer .d-flex {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .connection-tips {
+    font-size: 0.9em;
+  }
+}

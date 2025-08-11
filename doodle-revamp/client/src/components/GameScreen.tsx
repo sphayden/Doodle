@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Canvas, PencilBrush, Rect } from 'fabric';
+import { Alert, Spinner } from 'react-bootstrap';
+import { GameError } from '../interfaces';
 import './GameScreen.css';
 
 interface GameScreenProps {
@@ -9,6 +11,11 @@ interface GameScreenProps {
   onFinishDrawing?: () => void;
   playersFinished?: string[];
   currentPlayerId?: string;
+  isConnected?: boolean;
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  error?: GameError | null;
+  playerCount?: number;
+  submittedDrawings?: number;
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({ 
@@ -17,13 +24,19 @@ const GameScreen: React.FC<GameScreenProps> = ({
   onDrawingComplete,
   onFinishDrawing,
   playersFinished = [],
-  currentPlayerId
+  currentPlayerId,
+  isConnected = true,
+  connectionStatus = 'connected',
+  error = null,
+  playerCount = 0,
+  submittedDrawings = 0
 }) => {
   const [timeLeft, setTimeLeft] = useState(timeRemaining);
   const [brushSize, setBrushSize] = useState(5);
   const [brushColor, setBrushColor] = useState('#000000');
   const [isFinished, setIsFinished] = useState(false);
-  const [toolsVisible, setToolsVisible] = useState(true);
+  // const [toolsVisible, setToolsVisible] = useState(true); // Reserved for future use
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
 
@@ -234,17 +247,26 @@ const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   // Finish drawing
-  const handleFinishDrawing = () => {
-    if (fabricCanvasRef.current && onDrawingComplete) {
-      const canvasData = fabricCanvasRef.current.toDataURL({
-        format: 'png',
-        quality: 0.8,
-        multiplier: 1
-      });
-      onDrawingComplete(canvasData);
-      setIsFinished(true);
-      if (onFinishDrawing) {
-        onFinishDrawing();
+  const handleFinishDrawing = async () => {
+    if (fabricCanvasRef.current && onDrawingComplete && !isSubmitting) {
+      setIsSubmitting(true);
+      
+      try {
+        const canvasData = fabricCanvasRef.current.toDataURL({
+          format: 'png',
+          quality: 0.8,
+          multiplier: 1
+        });
+        
+        await onDrawingComplete(canvasData);
+        setIsFinished(true);
+        
+        if (onFinishDrawing) {
+          onFinishDrawing();
+        }
+      } catch (error) {
+        console.error('Failed to submit drawing:', error);
+        setIsSubmitting(false);
       }
     }
   };
@@ -287,9 +309,27 @@ const GameScreen: React.FC<GameScreenProps> = ({
           
           <div className="status-section">
             <div className="player-status">
-              {playersFinished.length > 0 && (
+              {submittedDrawings > 0 && playerCount > 0 && (
                 <div className="finished-players">
-                  <span>Finished: {playersFinished.length}</span>
+                  <span>Submitted: {submittedDrawings}/{playerCount}</span>
+                </div>
+              )}
+              
+              {/* Connection Status */}
+              {connectionStatus !== 'connected' && (
+                <div className="connection-status">
+                  {connectionStatus === 'connecting' && (
+                    <span className="text-warning">
+                      <Spinner size="sm" className="me-1" />
+                      Reconnecting...
+                    </span>
+                  )}
+                  {connectionStatus === 'disconnected' && (
+                    <span className="text-danger">Disconnected</span>
+                  )}
+                  {connectionStatus === 'error' && (
+                    <span className="text-danger">Connection Error</span>
+                  )}
                 </div>
               )}
             </div>
@@ -298,17 +338,55 @@ const GameScreen: React.FC<GameScreenProps> = ({
       </div>
 
       <div className="game-content">
+        {/* Error Display */}
+        {error && (
+          <Alert variant="danger" className="game-error-alert">
+            <strong>Error:</strong> {error.message}
+            {error.recoverable && (
+              <div className="mt-2">
+                <small>The game will attempt to recover automatically.</small>
+              </div>
+            )}
+          </Alert>
+        )}
+        
         <div className="canvas-container">
           <canvas 
             ref={canvasRef}
-            className={`drawing-canvas ${isFinished ? 'finished' : ''}`}
+            className={`drawing-canvas ${isFinished ? 'finished' : ''} ${!isConnected ? 'disconnected' : ''}`}
           />
           
-          {isFinished && (
+          {(isFinished || isSubmitting) && (
             <div className="canvas-overlay">
               <div className="finished-message">
-                <h3>Drawing Complete!</h3>
-                <p>Waiting for other players...</p>
+                {isSubmitting ? (
+                  <>
+                    <Spinner animation="border" className="mb-3" />
+                    <h3>Submitting Drawing...</h3>
+                    <p>Please wait while we save your masterpiece!</p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Drawing Complete!</h3>
+                    <p>Waiting for other players...</p>
+                    {submittedDrawings > 0 && playerCount > 0 && (
+                      <p className="submission-progress">
+                        {submittedDrawings}/{playerCount} players finished
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {!isConnected && !isFinished && (
+            <div className="canvas-overlay disconnected-overlay">
+              <div className="disconnected-message">
+                <Spinner animation="border" variant="warning" className="mb-3" />
+                <h3>Connection Lost</h3>
+                <p>Attempting to reconnect...</p>
+                <small>Your drawing is safe and will be submitted when reconnected.</small>
               </div>
             </div>
           )}
@@ -359,7 +437,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
               <button 
                 className="tool-btn clear-btn"
                 onClick={clearCanvas}
-                disabled={isFinished}
+                disabled={isFinished || isSubmitting || !isConnected}
+                title={!isConnected ? 'Reconnecting...' : 'Clear canvas'}
               >
                 🗑️ Clear
               </button>
@@ -367,7 +446,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
               <button 
                 className="tool-btn test-btn"
                 onClick={testDrawing}
+                disabled={isFinished || isSubmitting}
                 style={{ background: '#ffc107', color: '#000' }}
+                title="Test canvas functionality"
               >
                 🧪 Test Canvas
               </button>
@@ -375,9 +456,17 @@ const GameScreen: React.FC<GameScreenProps> = ({
               <button 
                 className="tool-btn finish-btn"
                 onClick={handleFinishDrawing}
-                disabled={isFinished}
+                disabled={isFinished || isSubmitting || !isConnected}
+                title={!isConnected ? 'Reconnecting...' : 'Submit your drawing'}
               >
-                ✅ Finish Drawing
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="sm" className="me-1" />
+                    Submitting...
+                  </>
+                ) : (
+                  '✅ Finish Drawing'
+                )}
               </button>
             </div>
           </div>

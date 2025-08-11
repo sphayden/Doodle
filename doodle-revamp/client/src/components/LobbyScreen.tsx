@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Card, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Button, Card, Badge, Alert, Spinner } from 'react-bootstrap';
 import AnimatedBackground from './AnimatedBackground';
+import { Player, GameError } from '../interfaces';
 import './LobbyScreen.css';
-
-interface Player {
-  id: string;
-  name: string;
-  ready: boolean;
-  score: number;
-  isHost?: boolean;
-}
 
 interface LobbyScreenProps {
   players: Player[];
@@ -17,6 +10,10 @@ interface LobbyScreenProps {
   onStartVoting: () => void;
   isHost?: boolean;
   roomCode?: string;
+  isConnected?: boolean;
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  error?: GameError | null;
+  isStarting?: boolean;
 }
 
 const LoadingDots = () => (
@@ -33,7 +30,11 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
   canStart, 
   onStartVoting, 
   isHost, 
-  roomCode 
+  roomCode,
+  isConnected = true,
+  connectionStatus = 'connected',
+  error = null,
+  isStarting = false
 }) => {
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -87,7 +88,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
             {/* Header Section */}
             <div className="lobby-header text-center">
               <img 
-                src="/Logo3.PNG" 
+                src="/logo.svg" 
                 alt="Doodle Logo" 
                 className="logo-responsive" 
                 onError={(e) => {
@@ -95,6 +96,32 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                   target.style.display = 'none';
                 }} 
               />
+              
+              {/* Connection Status */}
+              {connectionStatus !== 'connected' && (
+                <Alert variant="warning" className="connection-alert mb-3">
+                  {connectionStatus === 'connecting' && (
+                    <>
+                      <Spinner size="sm" className="me-2" />
+                      Connecting to server...
+                    </>
+                  )}
+                  {connectionStatus === 'disconnected' && 'Disconnected from server'}
+                  {connectionStatus === 'error' && 'Connection error - attempting to reconnect'}
+                </Alert>
+              )}
+              
+              {/* Error Display */}
+              {error && (
+                <Alert variant="danger" className="error-alert mb-3">
+                  <strong>Error:</strong> {error.message}
+                  {error.recoverable && (
+                    <div className="mt-1">
+                      <small>Attempting to recover...</small>
+                    </div>
+                  )}
+                </Alert>
+              )}
               
               {players.length === 1 ? (
                 <div className="waiting-section">
@@ -110,7 +137,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                   <h2 className="lobby-title">Game Lobby</h2>
                   <p className="lobby-subtitle">
                     {players.length}/8 players joined
-                    {canStart && ' - Ready to start!'}
+                    {canStart && isConnected && ' - Ready to start!'}
+                    {!isConnected && ' - Reconnecting...'}
                   </p>
                 </div>
               )}
@@ -171,9 +199,11 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                   👑
                                 </Badge>
                               )}
-                              <Badge bg="success" className="ready-badge" title="Ready">
-                                Ready
-                              </Badge>
+                              {player.isConnected && (
+                                <Badge bg="success" className="ready-badge" title="Connected">
+                                  Connected
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -202,21 +232,38 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
             {/* Action Section */}
             <div className="action-section text-center">
-              {canStart ? (
+              {canStart && isConnected ? (
                 <Button 
                   variant="success"
                   size="lg"
                   onClick={onStartVoting}
-                  className="start-game-btn"
+                  className={`start-game-btn ${isStarting ? 'starting' : ''}`}
+                  disabled={isStarting || !isConnected}
                 >
-                  🎨 Start Game!
+                  {isStarting ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Starting Game...
+                    </>
+                  ) : (
+                    '🎨 Start Game!'
+                  )}
                 </Button>
               ) : (
                 <div className="waiting-info">
                   <p className="waiting-info-text">
-                    {players.length < 2 
-                      ? "Need at least 2 players to start" 
-                      : "Waiting for host to start..."}
+                    {!isConnected 
+                      ? "Reconnecting to server..." 
+                      : players.length < 2 
+                        ? "Need at least 2 players to start" 
+                        : "Waiting for host to start..."}
                   </p>
                 </div>
               )}

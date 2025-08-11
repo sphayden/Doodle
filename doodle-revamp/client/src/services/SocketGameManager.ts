@@ -13,6 +13,9 @@ import {
   createGameError
 } from '../interfaces';
 import { validatePlayerName, validateRoomCode, validateCanvasData, validateVote } from '../utils/validation';
+import { ErrorHandler } from '../utils/errorHandling';
+import { NetworkResilienceManager } from '../utils/networkResilience';
+import { ErrorRecoveryManager } from '../utils/errorRecovery';
 
 // Legacy interface for backward compatibility
 export interface AIResult extends GameResult {}
@@ -32,48 +35,195 @@ export class SocketGameManager implements GameManager {
   private lastError: GameError | null = null;
   private networkMessages: NetworkMessage[] = [];
   private connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' = 'disconnected';
+  
+  // Connection management properties
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+  private reconnectDelay: number = 2000; // Start with 2 seconds
+  private connectionTimeout: number = 10000; // 10 seconds
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private connectionTimer: NodeJS.Timeout | null = null;
+  private isDestroyed: boolean = false;
+  private serverUrl: string;
+  
+  // Enhanced error handling
+  private errorHandler: ErrorHandler;
+  private networkResilience: NetworkResilienceManager;
+  private errorRecovery: ErrorRecoveryManager;
 
   constructor(onStateChange: GameStateChangeCallback, tieBreakerCallbacks?: TieBreakerCallbacks) {
     this.onStateChange(onStateChange);
     this.tieBreakerCallbacks = tieBreakerCallbacks || null;
+    this.serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+    
+    // Initialize enhanced error handling
+    this.errorHandler = new ErrorHandler();
+    this.networkResilience = new NetworkResilienceManager();
+    this.errorRecovery = new ErrorRecoveryManager();
+    
     this.initializeSocket();
   }
 
   private initializeSocket() {
-    const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
-    this.socket = io(serverUrl, {
-      autoConnect: false
+    if (this.isDestroyed) return;
+    
+    this.socket = io(this.serverUrl, {
+      autoConnect: false,
+      timeout: this.connectionTimeout,
+      reconnection: false, // We'll handle reconnection manually
+      forceNew: true
     });
 
     this.setupEventHandlers();
   }
 
-  private setupEventHandlers() {
-    if (!this.socket) return;
+  private attemptReconnection() {
+    if (this.isDestroyed || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        this.handleError(createGameError(
+          GameErrorCode.CONNECTION_FAILED,
+          'Maximum reconnection attempts reached',
+          { attempts: this.reconnectAttempts, maxAttempts: this.maxReconnectAttempts },
+          false
+        ));
+      }
+      return;
+    }
 
-    // Connection events
+    this.reconnectAttempts++;
+    const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1); // Exponential backoff
+    
+    console.log(`🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
+    
+    this.reconnectTimer = setTimeout(() => {
+      if (this.isDestroyed) return;
+      
+      this.connectionStatus = 'connecting';
+      this.updateGameState({ connectionStatus: 'connecting' });
+      
+      // Reinitialize socket for clean reconnection
+      if (this.socket) {
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+      }
+      
+      this.initializeSocket();
+      
+      if (this.currentRoomCode && this.playerName) {
+        // Try to rejoin the room
+        this.rejoinRoom();
+      }
+    }, delay);
+  }
+
+  private async rejoinRoom() {
+    if (!this.socket || this.isDestroyed) return;
+    
+    try {
+      if (this.isHostPlayer) {
+        // Host tries to recreate the room
+        await this.hostGame(this.playerName);
+      } else {
+        // Player tries to rejoin
+        await this.joinGame(this.playerName, this.currentRoomCode);
+      }
+      
+      // Reset reconnection attempts on successful reconnection
+      this.reconnectAttempts = 0;
+      console.log('✅ Successfully reconnected and rejoined room');
+    } catch (error) {
+      console.error('❌ Failed to rejoin room:', error);
+      this.attemptReconnection();
+    }
+  }
+
+  private clearTimers() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    
+    if (this.connectionTimer) {
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = null;
+    }
+  }
+
+  private setupEventHandlers() {
+    if (!this.socket || this.isDestroyed) return;
+
+    // Connection events with enhanced error recovery
     this.socket.on('connect', () => {
       console.log('✅ Connected to server');
       this.connectionStatus = 'connected';
+      this.reconnectAttempts = 0; // Reset on successful connection
+      this.clearTimers();
+      
+      this.updateGameState({ 
+        isConnected: true, 
+        connectionStatus: 'connected' 
+      });
+      
       this.logNetworkMessage('connect', {}, 'received');
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
+    this.socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from server:', reason);
       this.connectionStatus = 'disconnected';
-      this.logNetworkMessage('disconnect', {}, 'received');
+      
+      this.updateGameState({ 
+        isConnected: false, 
+        connectionStatus: 'disconnected' 
+      });
+      
+      this.logNetworkMessage('disconnect', { reason }, 'received');
+      
+      // Attempt reconnection unless it was intentional
+      if (reason !== 'io client disconnect' && !this.isDestroyed) {
+        this.attemptReconnection();
+      }
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('❌ Connection error:', error);
       this.connectionStatus = 'error';
-      this.handleError(createGameError(
+      
+      const gameError = createGameError(
         GameErrorCode.CONNECTION_FAILED,
         'Failed to connect to server',
-        { error: error.message },
+        { error: error.message, attempts: this.reconnectAttempts },
         true
-      ));
+      );
+      
+      this.handleError(gameError);
       this.logNetworkMessage('connect_error', { error: error.message }, 'received');
+      
+      // Attempt reconnection on connection error
+      if (!this.isDestroyed) {
+        this.attemptReconnection();
+      }
+    });
+
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+      this.reconnectAttempts = 0;
+      this.logNetworkMessage('reconnect', { attemptNumber }, 'received');
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error('❌ Reconnection error:', error);
+      this.logNetworkMessage('reconnect_error', { error: error.message }, 'received');
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error('❌ Reconnection failed');
+      this.handleError(createGameError(
+        GameErrorCode.CONNECTION_FAILED,
+        'Failed to reconnect to server',
+        { attempts: this.maxReconnectAttempts },
+        false
+      ));
+      this.logNetworkMessage('reconnect_failed', {}, 'received');
     });
 
     // Room events
@@ -132,6 +282,16 @@ export class SocketGameManager implements GameManager {
       this.tieBreakerCallbacks?.onTieDetected(
         data.tiedWords,
         '' // Server will send chosen word after animation
+      );
+    });
+
+    this.socket.on('tiebreaker-resolved', (data) => {
+      console.log('🎲 Tiebreaker resolved by server, chosen word:', data.chosenWord);
+      
+      // Update the tiebreaker modal with the server-chosen word
+      this.tieBreakerCallbacks?.onTieDetected(
+        data.tiedWords,
+        data.chosenWord // Server-determined winning word
       );
     });
 
@@ -204,6 +364,21 @@ export class SocketGameManager implements GameManager {
 
   private handleError(error: GameError) {
     this.lastError = error;
+    
+    // Process error with enhanced error handling
+    const classification = this.errorHandler.processError(error);
+    
+    // Check if we should throttle this error
+    if (this.errorHandler.shouldThrottleError(error)) {
+      console.warn('Error throttled due to frequency:', error.code);
+      return;
+    }
+    
+    // Attempt automatic recovery for recoverable errors
+    if (error.recoverable && classification.autoRetry) {
+      this.attemptAutoRecovery(error);
+    }
+    
     this.errorCallbacks.forEach(callback => {
       try {
         callback(error);
@@ -211,6 +386,28 @@ export class SocketGameManager implements GameManager {
         console.error('Error in error callback:', callbackError);
       }
     });
+  }
+
+  private async attemptAutoRecovery(error: GameError): Promise<void> {
+    try {
+      const result = await this.errorRecovery.initiateRecovery(error, this, {
+        gameState: this.gameState,
+        playerName: this.playerName,
+        roomCode: this.currentRoomCode,
+        isHost: this.isHostPlayer
+      });
+      
+      if (result.success) {
+        console.log('✅ Auto-recovery successful:', result.message);
+        if (result.newState) {
+          this.updateGameState(result.newState);
+        }
+      } else {
+        console.warn('❌ Auto-recovery failed:', result.message);
+      }
+    } catch (recoveryError) {
+      console.error('Recovery process failed:', recoveryError);
+    }
   }
 
   private logNetworkMessage(type: string, data: any, direction: 'sent' | 'received') {
@@ -232,67 +429,116 @@ export class SocketGameManager implements GameManager {
   // GameManager Interface Implementation
 
   async hostGame(playerName: string): Promise<string> {
-    try {
-      validatePlayerName(playerName);
-      this.playerName = playerName;
-      
-      if (!this.socket) {
-        throw createGameError(
-          GameErrorCode.CONNECTION_FAILED,
-          'Socket not initialized',
-          {},
-          false
-        );
-      }
+    return await this.networkResilience.executeWithResilience(
+      async () => {
+        try {
+          validatePlayerName(playerName);
+          this.playerName = playerName;
+          
+          if (!this.socket) {
+            this.initializeSocket();
+          }
+          
+          if (!this.socket) {
+            throw createGameError(
+              GameErrorCode.CONNECTION_FAILED,
+              'Failed to initialize socket connection',
+              {},
+              false
+            );
+          }
 
-      this.connectionStatus = 'connecting';
-      
-      return new Promise((resolve, reject) => {
-        this.socket!.connect();
-        
-        this.socket!.once('room-created', (data) => {
-          this.logNetworkMessage('room-created', data, 'received');
-          resolve(data.roomCode);
-        });
+          this.connectionStatus = 'connecting';
+          this.updateGameState({ connectionStatus: 'connecting' });
+          
+          return new Promise<string>((resolve, reject) => {
+            // Set up connection timeout
+            this.connectionTimer = setTimeout(() => {
+              reject(createGameError(
+                GameErrorCode.CONNECTION_TIMEOUT,
+                'Connection timeout while creating room',
+                { timeout: this.connectionTimeout },
+                true
+              ));
+            }, this.connectionTimeout);
 
-        this.socket!.once('error', (error) => {
-          this.logNetworkMessage('error', error, 'received');
-          reject(createGameError(
-            GameErrorCode.CONNECTION_FAILED,
-            error.message || 'Failed to create room',
-            { error },
+            const cleanup = () => {
+              this.clearTimers();
+              this.socket?.off('room-created');
+              this.socket?.off('error');
+              this.socket?.off('connect');
+              this.socket?.off('connect_error');
+            };
+
+            this.socket!.once('room-created', (data) => {
+              console.log('✅ Room created successfully:', data);
+              cleanup();
+              this.logNetworkMessage('room-created', data, 'received');
+              resolve(data.roomCode);
+            });
+
+            this.socket!.once('error', (error) => {
+              console.error('❌ Server error during room creation:', error);
+              cleanup();
+              this.logNetworkMessage('error', error, 'received');
+              reject(createGameError(
+                GameErrorCode.CONNECTION_FAILED,
+                error.message || 'Failed to create room',
+                { error },
+                true
+              ));
+            });
+
+            this.socket!.once('connect_error', (error) => {
+              cleanup();
+              reject(createGameError(
+                GameErrorCode.CONNECTION_FAILED,
+                'Connection failed while creating room',
+                { error: error.message },
+                true
+              ));
+            });
+
+            // Wait for connection then create room
+            this.socket!.once('connect', () => {
+              console.log('🔌 Connected to server, creating room...');
+              const message = { playerName };
+              this.socket!.emit('create-room', message);
+              this.logNetworkMessage('create-room', message, 'sent');
+              console.log('📤 Sent create-room message:', message);
+            });
+
+            // Start connection
+            if (!this.socket!.connected) {
+              console.log('🔌 Connecting to server...');
+              this.socket!.connect();
+            } else {
+              // Already connected, emit immediately
+              console.log('🔌 Already connected, creating room immediately...');
+              const message = { playerName };
+              this.socket!.emit('create-room', message);
+              this.logNetworkMessage('create-room', message, 'sent');
+              console.log('📤 Sent create-room message:', message);
+            }
+          });
+        } catch (error) {
+          this.clearTimers();
+          if (error instanceof Error && 'code' in error) {
+            throw error; // Re-throw GameError
+          }
+          throw createGameError(
+            GameErrorCode.UNKNOWN_ERROR,
+            'Unexpected error while hosting game',
+            { error: error instanceof Error ? error.message : String(error) },
             true
-          ));
-        });
-
-        // Wait for connection then create room
-        this.socket!.once('connect', () => {
-          const message = { playerName };
-          this.socket!.emit('create-room', message);
-          this.logNetworkMessage('create-room', message, 'sent');
-        });
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          reject(createGameError(
-            GameErrorCode.CONNECTION_TIMEOUT,
-            'Connection timeout while creating room',
-            { timeout: 10000 },
-            true
-          ));
-        }, 10000);
-      });
-    } catch (error) {
-      if (error instanceof Error && 'code' in error) {
-        throw error; // Re-throw GameError
+          );
+        }
+      },
+      {
+        timeout: this.connectionTimeout,
+        requestId: 'host-game'
       }
-      throw createGameError(
-        GameErrorCode.UNKNOWN_ERROR,
-        'Unexpected error while hosting game',
-        { error: error instanceof Error ? error.message : String(error) },
-        true
-      );
-    }
+    );
   }
 
   async joinGame(playerName: string, roomCode: string): Promise<void> {
@@ -438,16 +684,9 @@ export class SocketGameManager implements GameManager {
    * Resolve tiebreaker by sending chosen word to server
    */
   resolveTiebreaker(chosenWord: string): void {
-    if (!this.socket || !this.socket.connected) {
-      console.error('Cannot resolve tiebreaker: socket not connected');
-      return;
-    }
-
-    console.log('🎲 Resolving tiebreaker with word:', chosenWord);
-    this.socket.emit('resolve-tiebreaker', { roomCode: this.currentRoomCode, chosenWord });
-    
-    // Notify callback
-    this.tieBreakerCallbacks?.onTieResolved(chosenWord);
+    // Note: Manual tiebreaker resolution removed - server handles all tiebreakers automatically
+    // This method is kept for interface compatibility but does nothing
+    console.log('🎲 Tiebreaker will be resolved automatically by server');
   }
 
   /**
@@ -538,17 +777,36 @@ export class SocketGameManager implements GameManager {
   }
 
   destroy(): void {
-    this.disconnect();
+    this.isDestroyed = true;
+    this.clearTimers();
+    
+    // Cleanup enhanced error handling
+    this.networkResilience.destroy();
+    this.errorRecovery.destroy();
+    
+    // Disconnect gracefully
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      }
+      this.socket = null;
+    }
+    
+    // Clear all callbacks and state
     this.stateChangeCallbacks.clear();
     this.errorCallbacks.clear();
     this.networkMessages = [];
     this.gameState = null;
     this.lastError = null;
+    this.tieBreakerCallbacks = null;
     
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket = null;
-    }
+    // Reset connection state
+    this.connectionStatus = 'disconnected';
+    this.reconnectAttempts = 0;
+    this.currentRoomCode = '';
+    this.playerName = '';
+    this.isHostPlayer = false;
   }
 
   // Development Tools (optional methods)

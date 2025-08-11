@@ -58,13 +58,11 @@
   height: auto;
   width: min(250px, 35vw);
   filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
-  transition: transform 0.3s ease;
+  cursor: default;
   margin-bottom: clamp(10px, 2vh, 20px);
 }
 
-.logo-responsive:hover {
-  transform: scale(1.05);
-}
+/* Removed hover effect to make logo less button-like */
 
 /* Titles */
 .lobby-title {

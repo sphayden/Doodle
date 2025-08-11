@@ -118,28 +118,7 @@ class GameManager {
     return room.getGameState();
   }
 
-  /**
-   * Resolve tiebreaker and start drawing
-   */
-  async resolveTiebreaker(roomCode, playerId, chosenWord) {
-    const room = this.rooms.get(roomCode);
-    if (!room) {
-      throw new Error('Room not found');
-    }
-    
-    if (!room.hasPlayer(playerId)) {
-      throw new Error('Player not in room');
-    }
-    
-    if (room.gamePhase !== 'voting') {
-      throw new Error('Not in voting phase');
-    }
-    
-    // Start drawing with the chosen word
-    room.startDrawing(chosenWord);
-    
-    return room.getGameState();
-  }
+  // Manual tiebreaker resolution removed - server handles all tiebreakers automatically
 
   /**
    * Automatically resolve tiebreaker with random selection

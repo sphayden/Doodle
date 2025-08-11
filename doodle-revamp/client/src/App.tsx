@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import StartScreen from './components/StartScreen';
 import JoinGameScreen from './components/JoinGameScreen';
 import LobbyScreen from './components/LobbyScreen';
@@ -6,15 +6,25 @@ import VotingScreen from './components/VotingScreen';
 import GameScreen from './components/GameScreen';
 import TieBreakerModal from './components/TieBreakerModal';
 import TestUtils from './utils/TestUtils';
-import { SocketGameManager, GameState as SocketGameState, TieBreakerCallbacks } from './services/SocketGameManager';
+import ConnectionStatus from './components/ConnectionStatus';
+import ErrorModal from './components/ErrorModal';
+import ReconnectionProgress from './components/ReconnectionProgress';
+import { 
+  GameManager, 
+  GameState, 
+  GameError, 
+  TieBreakerCallbacks,
+  GameErrorCode 
+} from './interfaces';
+import { SocketGameManager } from './services/SocketGameManager';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface AppState {
   currentScreen: 'start' | 'join' | 'lobby' | 'voting' | 'game' | 'results';
   playerName: string;
-  gameManager: SocketGameManager | null;
-  gameState: SocketGameState | null;
+  gameManager: GameManager | null;
+  gameState: GameState | null;
   isHost: boolean;
   roomCode: string;
   error: string;
@@ -22,6 +32,12 @@ interface AppState {
   showTieBreaker: boolean;
   tiedOptions: string[];
   winningWord: string;
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  showErrorModal: boolean;
+  showReconnectionProgress: boolean;
+  reconnectionAttempt: number;
+  maxReconnectionAttempts: number;
+  nextAttemptIn: number;
 }
 
 function App() {
@@ -36,7 +52,13 @@ function App() {
     isConnecting: false,
     showTieBreaker: false,
     tiedOptions: [],
-    winningWord: ''
+    winningWord: '',
+    connectionStatus: 'disconnected',
+    showErrorModal: false,
+    showReconnectionProgress: false,
+    reconnectionAttempt: 0,
+    maxReconnectionAttempts: 5,
+    nextAttemptIn: 0
   });
 
   useEffect(() => {
@@ -48,17 +70,45 @@ function App() {
     };
   }, [appState.gameManager]);
 
-  const handleGameStateChange = (gameState: SocketGameState) => {
+  const handleGameStateChange = useCallback((gameState: GameState) => {
     setAppState(prev => ({
       ...prev,
       gameState: gameState,
       roomCode: gameState.roomCode,
+      connectionStatus: gameState.connectionStatus,
       currentScreen: gameState.gamePhase === 'lobby' ? 'lobby' : 
                      gameState.gamePhase === 'voting' ? 'voting' :
                      gameState.gamePhase === 'drawing' ? 'game' :
                      gameState.gamePhase === 'results' ? 'results' : 'lobby'
     }));
-  };
+  }, []);
+
+  const handleGameError = useCallback((error: GameError) => {
+    console.error('Game error:', error);
+    
+    // Update state with error and show modal for serious errors
+    setAppState(prev => ({
+      ...prev,
+      error: error.message,
+      isConnecting: false,
+      connectionStatus: error.code.includes('CONNECTION') ? 'error' : prev.connectionStatus,
+      showErrorModal: !error.recoverable || [
+        GameErrorCode.CONNECTION_FAILED,
+        GameErrorCode.ROOM_NOT_FOUND,
+        GameErrorCode.ROOM_FULL,
+        GameErrorCode.INVALID_ROOM_CODE
+      ].includes(error.code as GameErrorCode)
+    }));
+    
+    // Show reconnection progress for connection errors
+    if ([GameErrorCode.CONNECTION_LOST, GameErrorCode.CONNECTION_TIMEOUT].includes(error.code as GameErrorCode)) {
+      setAppState(prev => ({
+        ...prev,
+        showReconnectionProgress: true,
+        reconnectionAttempt: 1
+      }));
+    }
+  }, []);
 
   const hostGame = async (playerName: string) => {
     console.log('hostGame called with playerName:', playerName);
@@ -67,15 +117,21 @@ function App() {
         ...prev, 
         playerName, 
         isConnecting: true, 
-        error: '' 
+        error: '',
+        connectionStatus: 'connecting'
       }));
 
-      console.log('Creating SocketGameManager...');
+      console.log('Creating GameManager...');
       const tieBreakerCallbacks: TieBreakerCallbacks = {
         onTieDetected: handleTieDetected,
         onTieResolved: handleTieResolved
       };
+      
       const gameManager = new SocketGameManager(handleGameStateChange, tieBreakerCallbacks);
+      
+      // Set up error handling
+      gameManager.onError(handleGameError);
+      
       console.log('Calling hostGame...');
       const roomCode = await gameManager.hostGame(playerName);
       console.log('Host game successful, roomCode:', roomCode);
@@ -86,14 +142,17 @@ function App() {
         isHost: true,
         roomCode,
         currentScreen: 'lobby',
-        isConnecting: false
+        isConnecting: false,
+        connectionStatus: 'connected'
       }));
     } catch (error) {
       console.error('Error hosting game:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to host game. Please try again.';
       setAppState(prev => ({
         ...prev,
-        error: 'Failed to host game. Please try again.',
-        isConnecting: false
+        error: errorMessage,
+        isConnecting: false,
+        connectionStatus: 'error'
       }));
     }
   };
@@ -116,14 +175,20 @@ function App() {
       setAppState(prev => ({ 
         ...prev, 
         isConnecting: true, 
-        error: '' 
+        error: '',
+        connectionStatus: 'connecting'
       }));
 
       const tieBreakerCallbacks: TieBreakerCallbacks = {
         onTieDetected: handleTieDetected,
         onTieResolved: handleTieResolved
       };
+      
       const gameManager = new SocketGameManager(handleGameStateChange, tieBreakerCallbacks);
+      
+      // Set up error handling
+      gameManager.onError(handleGameError);
+      
       await gameManager.joinGame(appState.playerName, roomCode);
 
       setAppState(prev => ({
@@ -132,14 +197,17 @@ function App() {
         isHost: false,
         roomCode,
         currentScreen: 'lobby',
-        isConnecting: false
+        isConnecting: false,
+        connectionStatus: 'connected'
       }));
     } catch (error) {
       console.error('Error joining game:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to join game. Check the room code and try again.';
       setAppState(prev => ({
         ...prev,
-        error: 'Failed to join game. Check the room code and try again.',
-        isConnecting: false
+        error: errorMessage,
+        isConnecting: false,
+        connectionStatus: 'error'
       }));
     }
   };
@@ -156,7 +224,52 @@ function App() {
   const clearError = () => {
     setAppState(prev => ({
       ...prev,
-      error: ''
+      error: '',
+      showErrorModal: false
+    }));
+  };
+
+  const handleRetry = () => {
+    if (appState.gameManager) {
+      // Clear error and attempt to reconnect
+      setAppState(prev => ({
+        ...prev,
+        error: '',
+        showErrorModal: false,
+        isConnecting: true,
+        connectionStatus: 'connecting'
+      }));
+      
+      // Try to reconnect based on current state
+      if (appState.isHost) {
+        hostGame(appState.playerName);
+      } else if (appState.roomCode) {
+        joinGame(appState.roomCode);
+      }
+    }
+  };
+
+  const handleReconnect = () => {
+    if (appState.gameManager) {
+      setAppState(prev => ({
+        ...prev,
+        showReconnectionProgress: true,
+        reconnectionAttempt: 1,
+        isConnecting: true,
+        connectionStatus: 'connecting'
+      }));
+      
+      // Attempt reconnection
+      handleRetry();
+    }
+  };
+
+  const handleCancelReconnection = () => {
+    setAppState(prev => ({
+      ...prev,
+      showReconnectionProgress: false,
+      reconnectionAttempt: 0,
+      isConnecting: false
     }));
   };
 
@@ -193,14 +306,21 @@ function App() {
 
   const handleTieSelectionComplete = (selectedOption: string) => {
     console.log('🎲 [APP] Tie selection complete, chosen word:', selectedOption);
-    if (appState.gameManager) {
+    
+    // Only call resolveTiebreaker if this is a manual selection (no server-determined winning word)
+    if (appState.gameManager && !appState.winningWord) {
+      console.log('🎲 [APP] Manual tiebreaker resolution, sending to server');
       appState.gameManager.resolveTiebreaker(selectedOption);
+    } else {
+      console.log('🎲 [APP] Server-resolved tiebreaker, no need to send to server');
     }
+    
     // Hide the modal
     setAppState(prev => ({
       ...prev,
       showTieBreaker: false,
-      tiedOptions: []
+      tiedOptions: [],
+      winningWord: '' // Reset winning word
     }));
   };
 
@@ -218,12 +338,16 @@ function App() {
 
   const simulateVoting = (wordOptions: string[], votes: { [word: string]: number }) => {
     console.log('🧪 [APP] Simulating voting scenario');
-    const mockGameState: SocketGameState = {
+    const mockGameState: GameState = {
       roomCode: 'TEST123',
+      isConnected: true,
+      connectionStatus: 'connected',
       players: [
-        { id: '1', name: 'Test Player 1', ready: true, score: 0 },
-        { id: '2', name: 'Test Player 2', ready: true, score: 0 }
+        { id: '1', name: 'Test Player 1', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 },
+        { id: '2', name: 'Test Player 2', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 }
       ],
+      currentPlayer: null,
+      hostId: '1',
       playerCount: 2,
       maxPlayers: 8,
       gamePhase: 'voting',
@@ -233,7 +357,7 @@ function App() {
       timeRemaining: 0,
       drawingTimeLimit: 60,
       submittedDrawings: 0,
-      aiResults: []
+      results: []
     };
     
     setAppState(prev => ({
@@ -245,12 +369,16 @@ function App() {
 
   const simulateGameStart = (word: string) => {
     console.log('🧪 [APP] Simulating game start with word:', word);
-    const mockGameState: SocketGameState = {
+    const mockGameState: GameState = {
       roomCode: 'TEST123',
+      isConnected: true,
+      connectionStatus: 'connected',
       players: [
-        { id: '1', name: 'Test Player 1', ready: true, score: 0 },
-        { id: '2', name: 'Test Player 2', ready: true, score: 0 }
+        { id: '1', name: 'Test Player 1', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 },
+        { id: '2', name: 'Test Player 2', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 }
       ],
+      currentPlayer: null,
+      hostId: '1',
       playerCount: 2,
       maxPlayers: 8,
       gamePhase: 'drawing',
@@ -260,7 +388,7 @@ function App() {
       timeRemaining: 60,
       drawingTimeLimit: 60,
       submittedDrawings: 0,
-      aiResults: []
+      results: []
     };
     
     setAppState(prev => ({
@@ -279,6 +407,8 @@ function App() {
           onJoinGame={showJoinGame} 
           error={appState.error}
           onClearError={clearError}
+          isConnecting={appState.isConnecting}
+          connectionStatus={appState.connectionStatus}
         />;
       case 'join':
         return (
@@ -299,6 +429,10 @@ function App() {
             onStartVoting={startVoting}
             isHost={appState.isHost}
             roomCode={appState.roomCode}
+            isConnected={appState.gameState?.isConnected || false}
+            connectionStatus={appState.connectionStatus}
+            error={appState.gameState?.lastError || null}
+            isStarting={appState.isConnecting && appState.gameState?.gamePhase === 'lobby'}
           />
         );
       case 'voting':
@@ -308,6 +442,11 @@ function App() {
             wordOptions={appState.gameState.wordOptions}
             votes={appState.gameState.voteCounts}
             onVote={voteForWord}
+            isConnected={appState.gameState.isConnected}
+            connectionStatus={appState.connectionStatus}
+            error={appState.gameState.lastError}
+            playerCount={appState.gameState.playerCount}
+            playersVoted={Object.values(appState.gameState.voteCounts).reduce((sum, count) => sum + count, 0)}
           />
         );
       case 'game':
@@ -316,9 +455,9 @@ function App() {
           <GameScreen
             word={appState.gameState.chosenWord}
             timeRemaining={appState.gameState.timeRemaining}
-            onDrawingComplete={(canvasData) => {
+            onDrawingComplete={async (canvasData) => {
               if (appState.gameManager) {
-                appState.gameManager.submitDrawing(canvasData);
+                return appState.gameManager.submitDrawing(canvasData);
               }
             }}
             onFinishDrawing={() => {
@@ -327,7 +466,12 @@ function App() {
               }
             }}
             playersFinished={[]} // Will implement this later
-            currentPlayerId={appState.gameManager?.getRoomId()}
+            currentPlayerId={appState.gameManager?.getCurrentPlayer()?.id}
+            isConnected={appState.gameState.isConnected}
+            connectionStatus={appState.connectionStatus}
+            error={appState.gameState.lastError}
+            playerCount={appState.gameState.playerCount}
+            submittedDrawings={appState.gameState.submittedDrawings}
           />
         );
       case 'results':
@@ -336,7 +480,7 @@ function App() {
           <div className="results-screen">
             <h2>AI Judging Results!</h2>
             <div className="results-container">
-              {appState.gameState.aiResults.map((result, index) => (
+              {appState.gameState.results.map((result, index) => (
                 <div key={result.playerId} className="result-item">
                   <div className="rank">#{result.rank}</div>
                   <div className="player-info">
@@ -348,7 +492,18 @@ function App() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setAppState(prev => ({ ...prev, currentScreen: 'start', gameManager: null, gameState: null }))}>
+            <button onClick={() => {
+              if (appState.gameManager) {
+                appState.gameManager.destroy();
+              }
+              setAppState(prev => ({ 
+                ...prev, 
+                currentScreen: 'start', 
+                gameManager: null, 
+                gameState: null,
+                connectionStatus: 'disconnected'
+              }));
+            }}>
               New Game
             </button>
           </div>
@@ -366,14 +521,46 @@ function App() {
   return (
     <div className="App">
       <div className="overlay"></div>
+      
+      {/* Connection Status Indicator - Only show when there's an active game */}
+      {appState.gameManager && (
+        <ConnectionStatus
+          connectionStatus={appState.connectionStatus}
+          error={appState.gameState?.lastError || null}
+          onRetry={handleRetry}
+          className="connection-status-fixed"
+        />
+      )}
+      
       {renderCurrentScreen()}
       
+      {/* Modals */}
       <TieBreakerModal
         show={appState.showTieBreaker}
         onHide={() => {}} // Modal cannot be closed manually during tie breaking
         tiedOptions={appState.tiedOptions}
         winningWord={appState.winningWord}
         onSelectionComplete={handleTieSelectionComplete}
+      />
+
+      <ErrorModal
+        show={appState.showErrorModal}
+        error={appState.gameState?.lastError || null}
+        onHide={clearError}
+        onRetry={handleRetry}
+        onReconnect={handleReconnect}
+        isRetrying={appState.isConnecting}
+        isReconnecting={appState.showReconnectionProgress}
+      />
+
+      <ReconnectionProgress
+        show={appState.showReconnectionProgress}
+        attempt={appState.reconnectionAttempt}
+        maxAttempts={appState.maxReconnectionAttempts}
+        nextAttemptIn={appState.nextAttemptIn}
+        onCancel={handleCancelReconnection}
+        onRetryNow={handleRetry}
+        error={appState.error}
       />
 
       {/* Development Test Panel - Only show in development */}

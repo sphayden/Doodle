@@ -41,17 +41,22 @@ io.on('connection', (socket) => {
 
   // Room management
   socket.on('create-room', async (data) => {
+    console.log(`🎮 Create room request from ${socket.id}:`, data);
     try {
       const { playerName } = data;
+      console.log(`📝 Creating room for player: ${playerName}`);
+      
       const { roomCode, gameState } = await gameManager.createRoom(socket.id, playerName);
+      console.log(`✅ Room created successfully: ${roomCode}`);
       
       socket.join(roomCode);
       socket.emit('room-created', { roomCode, gameState });
       
-      console.log(`Room created: ${roomCode} by ${playerName}`);
+      console.log(`🏠 Room ${roomCode} created by ${playerName}, game state:`, gameState);
     } catch (error) {
-      console.error('Error creating room:', error);
-      socket.emit('error', { message: 'Failed to create room' });
+      console.error('❌ Error creating room:', error.message);
+      console.error('Full error:', error);
+      socket.emit('error', { message: error.message || 'Failed to create room' });
     }
   });
 
@@ -140,19 +145,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle tiebreaker resolution
-  socket.on('resolve-tiebreaker', async (data) => {
-    try {
-      const { roomCode, chosenWord } = data;
-      const gameState = await gameManager.resolveTiebreaker(roomCode, socket.id, chosenWord);
-      
-      io.to(roomCode).emit('drawing-started', { gameState });
-      console.log(`Tiebreaker resolved in room: ${roomCode}, chosen word: ${chosenWord}`);
-    } catch (error) {
-      console.error('Error resolving tiebreaker:', error);
-      socket.emit('error', { message: error.message });
-    }
-  });
+  // Note: Manual tiebreaker resolution removed - server now handles all tiebreakers automatically
 
   socket.on('submit-drawing', async (data) => {
     try {

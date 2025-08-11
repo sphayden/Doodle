@@ -1,0 +1,102 @@
+.connection-status-alert {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+.connection-status-alert .status-icon {
+  font-size: 1.1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+}
+
+.connection-status-alert .status-message {
+  font-size: 0.9em;
+  margin-top: 2px;
+  opacity: 0.9;
+}
+
+.connection-status-alert .retry-btn {
+  min-width: 60px;
+  font-size: 0.85em;
+  padding: 0.25rem 0.5rem;
+}
+
+.connection-status-alert .retry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Fixed position variant for global status */
+.connection-status-fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  max-width: 350px;
+  margin-bottom: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Compact variant for inline use */
+.connection-status-compact {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+}
+
+.connection-status-compact .status-message {
+  display: inline;
+  margin-left: 0.5rem;
+}
+
+/* Animation for status changes */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse animation for connecting state */
+.connection-status-alert.alert-info .status-icon .spinner-border {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .connection-status-fixed {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .connection-status-alert {
+    font-size: 0.9em;
+  }
+  
+  .connection-status-alert .retry-btn {
+    font-size: 0.8em;
+    padding: 0.2rem 0.4rem;
+  }
+}

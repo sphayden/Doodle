@@ -339,18 +339,27 @@ class GameRoom {
       id: player.id,
       name: player.name,
       isHost: player.isHost,
-      ready: player.ready,
-      score: player.score,
+      isConnected: true, // All players in the room are connected
       hasVoted: player.hasVoted,
-      hasSubmittedDrawing: player.hasSubmittedDrawing
+      hasSubmittedDrawing: player.hasSubmittedDrawing,
+      score: player.score
     }));
     
     return {
+      // Connection Info
       roomCode: this.roomCode,
-      gamePhase: this.gamePhase,
+      isConnected: true,
+      connectionStatus: 'connected',
+      
+      // Player Management
       players: playersArray,
+      currentPlayer: null, // Will be set by client based on socket ID
+      hostId: this.hostId,
       playerCount: this.players.size,
       maxPlayers: this.maxPlayers,
+      
+      // Game Flow
+      gamePhase: this.gamePhase,
       
       // Voting data
       wordOptions: this.wordOptions,
@@ -363,7 +372,7 @@ class GameRoom {
       submittedDrawings: this.drawings.size,
       
       // Results data
-      aiResults: this.aiResults
+      results: this.aiResults || []
     };
   }
 

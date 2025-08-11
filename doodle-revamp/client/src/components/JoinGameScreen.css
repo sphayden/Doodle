@@ -17,12 +17,10 @@
   height: auto;
   width: clamp(200px, 50vw, 400px);
   filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
-  transition: transform 0.3s ease;
+  cursor: default;
 }
 
-.logo-responsive:hover {
-  transform: scale(1.05);
-}
+/* Removed hover effect to make logo less button-like */
 
 /* Welcome and Instruction Text */
 .welcome-text {

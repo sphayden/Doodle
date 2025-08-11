@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Spinner } from 'react-bootstrap';
 import AnimatedBackground from './AnimatedBackground';
 import NotificationModal from './NotificationModal';
 import { generateRandomName } from '../utils/nameGenerator';
@@ -10,13 +10,17 @@ interface StartScreenProps {
   onJoinGame: (playerName: string) => void;
   error?: string;
   onClearError: () => void;
+  isConnecting?: boolean;
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ 
   onHostGame, 
   onJoinGame, 
   error, 
-  onClearError
+  onClearError,
+  isConnecting = false,
+  connectionStatus = 'disconnected'
 }) => {
   const [playerName, setPlayerName] = useState('');
 
@@ -48,7 +52,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
             {/* Logo Section */}
             <div className="logo-section mb-4">
               <img 
-                src="/Logo3.PNG" 
+                src="/logo.svg" 
                 alt="Doodle Logo" 
                 className="logo-responsive" 
                 onError={(e) => {
@@ -93,11 +97,28 @@ const StartScreen: React.FC<StartScreenProps> = ({
                   <Button
                     variant="success"
                     size="lg"
-                    className="game-btn host-btn w-100"
+                    className={`game-btn host-btn w-100 ${isConnecting ? 'connecting' : ''}`}
                     onClick={handleHostGame}
+                    disabled={isConnecting}
                   >
-                    <i className="fas fa-crown me-2"></i>
-                    HOST GAME
+                    {isConnecting ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        HOSTING...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-crown me-2"></i>
+                        HOST GAME
+                      </>
+                    )}
                   </Button>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -106,6 +127,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
                     size="lg"
                     className="game-btn join-btn w-100"
                     onClick={handleJoinGame}
+                    disabled={isConnecting}
                   >
                     <i className="fas fa-users me-2"></i>
                     JOIN GAME

@@ -2,13 +2,16 @@ const OpenAI = require('openai');
 
 class AIJudge {
   constructor() {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
+    this.hasOpenAI = !!process.env.OPENAI_API_KEY;
     
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    if (this.hasOpenAI) {
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      console.log('🤖 AI Judge: OpenAI API configured');
+    } else {
+      console.warn('⚠️ AI Judge: OpenAI API key not configured, using mock judging');
+    }
   }
 
   /**
@@ -20,6 +23,11 @@ class AIJudge {
     }
 
     console.log(`🤖 AI Judge: Evaluating ${drawingSubmissions.length} drawings for word: "${drawingSubmissions[0].word}"`);
+    
+    // If OpenAI is not available, use mock judging
+    if (!this.hasOpenAI) {
+      return this.mockEvaluateDrawings(drawingSubmissions);
+    }
     
     try {
       // Evaluate each drawing
@@ -203,6 +211,41 @@ Be fair but critical. Average drawings should score 40-60. Only exceptional draw
     } catch (error) {
       return { success: false, message: error.message };
     }
+  }
+  /**
+   * Mock evaluation for when OpenAI is not available
+   */
+  mockEvaluateDrawings(drawingSubmissions) {
+    console.log('🎭 Using mock AI judging (OpenAI not configured)');
+    
+    return drawingSubmissions.map((submission, index) => ({
+      playerId: submission.playerId,
+      playerName: submission.playerName,
+      rank: index + 1,
+      score: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
+      feedback: `Great drawing! ${this.getMockFeedback()}`,
+      canvasData: submission.canvasData
+    })).sort((a, b) => b.score - a.score).map((result, index) => ({
+      ...result,
+      rank: index + 1
+    }));
+  }
+  
+  /**
+   * Get random mock feedback
+   */
+  getMockFeedback() {
+    const feedbacks = [
+      "Nice use of colors and shapes!",
+      "Creative interpretation of the word!",
+      "Good attention to detail!",
+      "Excellent artistic style!",
+      "Very recognizable drawing!",
+      "Great composition and balance!",
+      "Impressive creativity!",
+      "Well-executed concept!"
+    ];
+    return feedbacks[Math.floor(Math.random() * feedbacks.length)];
   }
 }
 

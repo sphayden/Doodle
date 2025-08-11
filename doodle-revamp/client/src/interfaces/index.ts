@@ -44,25 +44,25 @@ export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'er
 /**
  * Type utility for making all properties of an interface optional
  */
-export type PartialGameState = Partial<GameState>;
+export type PartialGameState = Partial<import('./GameManager').GameState>;
 
 /**
  * Type utility for picking specific properties from GameState
  */
-export type GameStateSubset<K extends keyof GameState> = Pick<GameState, K>;
+export type GameStateSubset<K extends keyof import('./GameManager').GameState> = Pick<import('./GameManager').GameState, K>;
 
 /**
  * Type for component props that need game state
  */
 export interface GameStateProps {
-  gameState: GameState | null;
+  gameState: import('./GameManager').GameState | null;
 }
 
 /**
  * Type for component props that need game manager
  */
 export interface GameManagerProps {
-  gameManager: GameManager | null;
+  gameManager: import('./GameManager').GameManager | null;
 }
 
 /**
@@ -75,14 +75,14 @@ export interface GameProps extends GameStateProps, GameManagerProps {}
  */
 export interface ErrorBoundaryState {
   hasError: boolean;
-  error?: GameError;
+  error?: import('./GameManager').GameError;
 }
 
 /**
  * Type for development tools props
  */
 export interface DevToolsProps {
-  gameManager: GameManager;
+  gameManager: import('./GameManager').GameManager;
   onSimulateTie: (tiedOptions: string[]) => void;
   onSimulateVoting: (wordOptions: string[], votes: Record<string, number>) => void;
   onSimulateGameStart: (word: string) => void;

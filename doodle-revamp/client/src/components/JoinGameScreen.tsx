@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Spinner } from 'react-bootstrap';
 import AnimatedBackground from './AnimatedBackground';
 import NotificationModal from './NotificationModal';
 import './JoinGameScreen.css';
@@ -51,7 +51,7 @@ const JoinGameScreen: React.FC<JoinGameScreenProps> = ({
             {/* Logo Section */}
             <div className="logo-section mb-4">
               <img 
-                src="/Logo3.PNG" 
+                src="/logo.svg" 
                 alt="Doodle Logo" 
                 className="logo-responsive" 
                 onError={(e) => {

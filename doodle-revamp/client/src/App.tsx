@@ -271,72 +271,72 @@ function App() {
   };
 
   const renderCurrentScreen = () => {
-    console.log('Rendering screen:', gameState.currentScreen, 'isHost:', gameState.isHost, 'roomCode:', gameState.roomCode);
-    switch (gameState.currentScreen) {
+    console.log('Rendering screen:', appState.currentScreen, 'isHost:', appState.isHost, 'roomCode:', appState.roomCode);
+    switch (appState.currentScreen) {
       case 'start':
         return <StartScreen 
           onHostGame={hostGame} 
           onJoinGame={showJoinGame} 
-          error={gameState.error}
+          error={appState.error}
           onClearError={clearError}
         />;
       case 'join':
         return (
           <JoinGameScreen
-            playerName={gameState.playerName}
+            playerName={appState.playerName}
             onJoinGame={joinGame}
             onBack={backToStart}
-            error={gameState.error}
+            error={appState.error}
             onClearError={clearError}
-            isConnecting={gameState.isConnecting}
+            isConnecting={appState.isConnecting}
           />
         );
       case 'lobby':
         return (
           <LobbyScreen
-            players={gameState.socketGameState?.players || []}
-            canStart={(gameState.socketGameState?.playerCount || 0) >= 2 && gameState.isHost}
+            players={appState.gameState?.players || []}
+            canStart={(appState.gameState?.playerCount || 0) >= 2 && appState.isHost}
             onStartVoting={startVoting}
-            isHost={gameState.isHost}
-            roomCode={gameState.roomCode}
+            isHost={appState.isHost}
+            roomCode={appState.roomCode}
           />
         );
       case 'voting':
-        if (!gameState.socketGameState) return null;
+        if (!appState.gameState) return null;
         return (
           <VotingScreen
-            wordOptions={gameState.socketGameState.wordOptions}
-            votes={gameState.socketGameState.voteCounts}
+            wordOptions={appState.gameState.wordOptions}
+            votes={appState.gameState.voteCounts}
             onVote={voteForWord}
           />
         );
       case 'game':
-        if (!gameState.socketGameState) return null;
+        if (!appState.gameState) return null;
         return (
           <GameScreen
-            word={gameState.socketGameState.chosenWord}
-            timeRemaining={gameState.socketGameState.timeRemaining}
+            word={appState.gameState.chosenWord}
+            timeRemaining={appState.gameState.timeRemaining}
             onDrawingComplete={(canvasData) => {
-              if (gameState.gameManager) {
-                gameState.gameManager.submitDrawing(canvasData);
+              if (appState.gameManager) {
+                appState.gameManager.submitDrawing(canvasData);
               }
             }}
             onFinishDrawing={() => {
-              if (gameState.gameManager) {
-                gameState.gameManager.finishDrawing();
+              if (appState.gameManager) {
+                appState.gameManager.finishDrawing();
               }
             }}
             playersFinished={[]} // Will implement this later
-            currentPlayerId={gameState.gameManager?.getRoomId()}
+            currentPlayerId={appState.gameManager?.getRoomId()}
           />
         );
       case 'results':
-        if (!gameState.socketGameState) return null;
+        if (!appState.gameState) return null;
         return (
           <div className="results-screen">
             <h2>AI Judging Results!</h2>
             <div className="results-container">
-              {gameState.socketGameState.aiResults.map((result, index) => (
+              {appState.gameState.aiResults.map((result, index) => (
                 <div key={result.playerId} className="result-item">
                   <div className="rank">#{result.rank}</div>
                   <div className="player-info">
@@ -348,7 +348,7 @@ function App() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setGameState(prev => ({ ...prev, currentScreen: 'start', gameManager: null, socketGameState: null }))}>
+            <button onClick={() => setAppState(prev => ({ ...prev, currentScreen: 'start', gameManager: null, gameState: null }))}>
               New Game
             </button>
           </div>
@@ -357,7 +357,7 @@ function App() {
         return <StartScreen 
           onHostGame={hostGame} 
           onJoinGame={showJoinGame} 
-          error={gameState.error}
+          error={appState.error}
           onClearError={clearError}
         />;
     }
@@ -369,10 +369,10 @@ function App() {
       {renderCurrentScreen()}
       
       <TieBreakerModal
-        show={gameState.showTieBreaker}
+        show={appState.showTieBreaker}
         onHide={() => {}} // Modal cannot be closed manually during tie breaking
-        tiedOptions={gameState.tiedOptions}
-        winningWord={gameState.winningWord}
+        tiedOptions={appState.tiedOptions}
+        winningWord={appState.winningWord}
         onSelectionComplete={handleTieSelectionComplete}
       />
 

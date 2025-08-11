@@ -1,62 +1,40 @@
 import { io, Socket } from 'socket.io-client';
+import {
+  GameManager,
+  GameState,
+  Player,
+  GameResult,
+  GameError,
+  GameErrorCode,
+  TieBreakerCallbacks,
+  GameStateChangeCallback,
+  GameErrorCallback,
+  NetworkMessage,
+  createGameError
+} from '../interfaces';
+import { validatePlayerName, validateRoomCode, validateCanvasData, validateVote } from '../utils/validation';
 
-// Game interfaces for Socket.io-based multiplayer implementation
-export interface Player {
-  id: string;
-  name: string;
-  ready: boolean;
-  score: number;
-  isHost?: boolean;
-  hasVoted?: boolean;
-  hasSubmittedDrawing?: boolean;
-}
+// Legacy interface for backward compatibility
+export interface AIResult extends GameResult {}
 
-export interface GameState {
-  roomCode: string;
-  gamePhase: 'lobby' | 'voting' | 'drawing' | 'judging' | 'results';
-  players: Player[];
-  playerCount: number;
-  maxPlayers: number;
-  
-  // Voting data
-  wordOptions: string[];
-  voteCounts: { [word: string]: number };
-  chosenWord: string;
-  
-  // Drawing data
-  timeRemaining: number;
-  drawingTimeLimit: number;
-  submittedDrawings: number;
-  
-  // Results data
-  aiResults: AIResult[];
-}
+// Re-export types for backward compatibility
+export type { GameState as SocketGameState, TieBreakerCallbacks } from '../interfaces';
 
-export interface AIResult {
-  playerId: string;
-  playerName: string;
-  score: number;
-  rank: number;
-  feedback: string;
-  canvasData: string;
-}
-
-export interface TieBreakerCallbacks {
-  onTieDetected: (tiedOptions: string[], winningWord: string) => void;
-  onTieResolved: (selectedOption: string) => void;
-}
-
-export class SocketGameManager {
+export class SocketGameManager implements GameManager {
   private socket: Socket | null = null;
   private gameState: GameState | null = null;
-  private isHost: boolean = false;
-  private onStateChange: (state: GameState) => void;
+  private isHostPlayer: boolean = false;
+  private stateChangeCallbacks: Set<GameStateChangeCallback> = new Set();
+  private errorCallbacks: Set<GameErrorCallback> = new Set();
   private tieBreakerCallbacks: TieBreakerCallbacks | null = null;
   private playerName: string = '';
   private currentRoomCode: string = '';
+  private lastError: GameError | null = null;
+  private networkMessages: NetworkMessage[] = [];
+  private connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' = 'disconnected';
 
-  constructor(onStateChange: (state: GameState) => void, tieBreakerCallbacks?: TieBreakerCallbacks) {
-    this.onStateChange = onStateChange;
+  constructor(onStateChange: GameStateChangeCallback, tieBreakerCallbacks?: TieBreakerCallbacks) {
+    this.onStateChange(onStateChange);
     this.tieBreakerCallbacks = tieBreakerCallbacks || null;
     this.initializeSocket();
   }
@@ -76,29 +54,53 @@ export class SocketGameManager {
     // Connection events
     this.socket.on('connect', () => {
       console.log('✅ Connected to server');
+      this.connectionStatus = 'connected';
+      this.logNetworkMessage('connect', {}, 'received');
     });
 
     this.socket.on('disconnect', () => {
       console.log('❌ Disconnected from server');
+      this.connectionStatus = 'disconnected';
+      this.logNetworkMessage('disconnect', {}, 'received');
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('❌ Connection error:', error);
+      this.connectionStatus = 'error';
+      this.handleError(createGameError(
+        GameErrorCode.CONNECTION_FAILED,
+        'Failed to connect to server',
+        { error: error.message },
+        true
+      ));
+      this.logNetworkMessage('connect_error', { error: error.message }, 'received');
     });
 
     // Room events
     this.socket.on('room-created', (data) => {
       console.log('🏠 Room created:', data.roomCode);
       this.currentRoomCode = data.roomCode;
-      this.isHost = true;
-      this.updateGameState(data.gameState);
+      this.isHostPlayer = true;
+      this.updateGameState({
+        ...data.gameState,
+        roomCode: data.roomCode,
+        isConnected: true,
+        connectionStatus: 'connected'
+      });
+      this.logNetworkMessage('room-created', data, 'received');
     });
 
     this.socket.on('room-joined', (data) => {
       console.log('🚪 Joined room:', data.roomCode);
       this.currentRoomCode = data.roomCode;
-      this.isHost = false;
-      this.updateGameState(data.gameState);
+      this.isHostPlayer = false;
+      this.updateGameState({
+        ...data.gameState,
+        roomCode: data.roomCode,
+        isConnected: true,
+        connectionStatus: 'connected'
+      });
+      this.logNetworkMessage('room-joined', data, 'received');
     });
 
     this.socket.on('player-joined', (data) => {
@@ -161,113 +163,275 @@ export class SocketGameManager {
     });
   }
 
-  private updateGameState(newState: GameState) {
-    this.gameState = newState;
-    this.onStateChange(newState);
+  private updateGameState(newState: Partial<GameState>) {
+    // Merge with existing state to ensure all required fields are present
+    this.gameState = {
+      ...this.createDefaultGameState(),
+      ...this.gameState,
+      ...newState
+    };
+    
+    // Notify all state change callbacks
+    this.stateChangeCallbacks.forEach(callback => {
+      try {
+        callback(this.gameState!);
+      } catch (error) {
+        console.error('Error in state change callback:', error);
+      }
+    });
   }
 
-  // Public API methods for game management
+  private createDefaultGameState(): GameState {
+    return {
+      roomCode: '',
+      isConnected: false,
+      connectionStatus: this.connectionStatus,
+      players: [],
+      currentPlayer: null,
+      hostId: '',
+      playerCount: 0,
+      maxPlayers: 8,
+      gamePhase: 'lobby',
+      wordOptions: [],
+      voteCounts: {},
+      chosenWord: '',
+      timeRemaining: 0,
+      drawingTimeLimit: 60,
+      submittedDrawings: 0,
+      results: []
+    };
+  }
 
-  /**
-   * Host a new game
-   */
+  private handleError(error: GameError) {
+    this.lastError = error;
+    this.errorCallbacks.forEach(callback => {
+      try {
+        callback(error);
+      } catch (callbackError) {
+        console.error('Error in error callback:', callbackError);
+      }
+    });
+  }
+
+  private logNetworkMessage(type: string, data: any, direction: 'sent' | 'received') {
+    const message: NetworkMessage = {
+      type,
+      data,
+      timestamp: new Date(),
+      direction
+    };
+    
+    this.networkMessages.push(message);
+    
+    // Keep only last 100 messages to prevent memory leaks
+    if (this.networkMessages.length > 100) {
+      this.networkMessages = this.networkMessages.slice(-100);
+    }
+  }
+
+  // GameManager Interface Implementation
+
   async hostGame(playerName: string): Promise<string> {
-    this.playerName = playerName;
-    
-    if (!this.socket) {
-      throw new Error('Socket not initialized');
-    }
-
-    return new Promise((resolve, reject) => {
-      this.socket!.connect();
+    try {
+      validatePlayerName(playerName);
+      this.playerName = playerName;
       
-      this.socket!.once('room-created', (data) => {
-        resolve(data.roomCode);
-      });
+      if (!this.socket) {
+        throw createGameError(
+          GameErrorCode.CONNECTION_FAILED,
+          'Socket not initialized',
+          {},
+          false
+        );
+      }
 
-      this.socket!.once('error', (error) => {
-        reject(new Error(error.message));
-      });
+      this.connectionStatus = 'connecting';
+      
+      return new Promise((resolve, reject) => {
+        this.socket!.connect();
+        
+        this.socket!.once('room-created', (data) => {
+          this.logNetworkMessage('room-created', data, 'received');
+          resolve(data.roomCode);
+        });
 
-      // Wait for connection then create room
-      this.socket!.once('connect', () => {
-        this.socket!.emit('create-room', { playerName });
-      });
+        this.socket!.once('error', (error) => {
+          this.logNetworkMessage('error', error, 'received');
+          reject(createGameError(
+            GameErrorCode.CONNECTION_FAILED,
+            error.message || 'Failed to create room',
+            { error },
+            true
+          ));
+        });
 
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, 10000);
-    });
+        // Wait for connection then create room
+        this.socket!.once('connect', () => {
+          const message = { playerName };
+          this.socket!.emit('create-room', message);
+          this.logNetworkMessage('create-room', message, 'sent');
+        });
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          reject(createGameError(
+            GameErrorCode.CONNECTION_TIMEOUT,
+            'Connection timeout while creating room',
+            { timeout: 10000 },
+            true
+          ));
+        }, 10000);
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error) {
+        throw error; // Re-throw GameError
+      }
+      throw createGameError(
+        GameErrorCode.UNKNOWN_ERROR,
+        'Unexpected error while hosting game',
+        { error: error instanceof Error ? error.message : String(error) },
+        true
+      );
+    }
   }
 
-  /**
-   * Join an existing game
-   */
   async joinGame(playerName: string, roomCode: string): Promise<void> {
-    this.playerName = playerName;
-    
-    if (!this.socket) {
-      throw new Error('Socket not initialized');
+    try {
+      validatePlayerName(playerName);
+      validateRoomCode(roomCode);
+      
+      this.playerName = playerName;
+      
+      if (!this.socket) {
+        throw createGameError(
+          GameErrorCode.CONNECTION_FAILED,
+          'Socket not initialized',
+          {},
+          false
+        );
+      }
+
+      this.connectionStatus = 'connecting';
+
+      return new Promise((resolve, reject) => {
+        this.socket!.connect();
+
+        this.socket!.once('room-joined', (data) => {
+          this.logNetworkMessage('room-joined', data, 'received');
+          resolve();
+        });
+
+        this.socket!.once('error', (error) => {
+          this.logNetworkMessage('error', error, 'received');
+          reject(createGameError(
+            GameErrorCode.ROOM_NOT_FOUND,
+            error.message || 'Failed to join room',
+            { error, roomCode },
+            true
+          ));
+        });
+
+        // Wait for connection then join room
+        this.socket!.once('connect', () => {
+          const message = { roomCode, playerName };
+          this.socket!.emit('join-room', message);
+          this.logNetworkMessage('join-room', message, 'sent');
+        });
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          reject(createGameError(
+            GameErrorCode.CONNECTION_TIMEOUT,
+            'Connection timeout while joining room',
+            { timeout: 10000, roomCode },
+            true
+          ));
+        }, 10000);
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error) {
+        throw error; // Re-throw GameError
+      }
+      throw createGameError(
+        GameErrorCode.UNKNOWN_ERROR,
+        'Unexpected error while joining game',
+        { error: error instanceof Error ? error.message : String(error) },
+        true
+      );
     }
-
-    return new Promise((resolve, reject) => {
-      this.socket!.connect();
-
-      this.socket!.once('room-joined', () => {
-        resolve();
-      });
-
-      this.socket!.once('error', (error) => {
-        reject(new Error(error.message));
-      });
-
-      // Wait for connection then join room
-      this.socket!.once('connect', () => {
-        this.socket!.emit('join-room', { roomCode, playerName });
-      });
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, 10000);
-    });
   }
 
-  /**
-   * Start voting (host only)
-   */
+  // Game Actions
   startVoting(): void {
-    if (!this.socket || !this.isHost) {
-      console.error('Cannot start voting: not host or socket not connected');
-      return;
-    }
+    try {
+      if (!this.socket || !this.socket.connected) {
+        throw createGameError(
+          GameErrorCode.CONNECTION_LOST,
+          'Cannot start voting: not connected to server',
+          {},
+          true
+        );
+      }
 
-    this.socket.emit('start-voting', { roomCode: this.currentRoomCode });
+      if (!this.isHostPlayer) {
+        throw createGameError(
+          GameErrorCode.UNAUTHORIZED_ACTION,
+          'Cannot start voting: only host can start voting',
+          {},
+          false
+        );
+      }
+
+      const message = { roomCode: this.currentRoomCode };
+      this.socket.emit('start-voting', message);
+      this.logNetworkMessage('start-voting', message, 'sent');
+    } catch (error) {
+      this.handleError(error as GameError);
+    }
   }
 
-  /**
-   * Vote for a word
-   */
   voteForWord(word: string): void {
-    if (!this.socket) {
-      console.error('Cannot vote: socket not connected');
-      return;
-    }
+    try {
+      if (!this.socket || !this.socket.connected) {
+        throw createGameError(
+          GameErrorCode.CONNECTION_LOST,
+          'Cannot vote: not connected to server',
+          {},
+          true
+        );
+      }
 
-    this.socket.emit('vote-word', { roomCode: this.currentRoomCode, word });
+      if (this.gameState?.wordOptions) {
+        validateVote(word, this.gameState.wordOptions);
+      }
+
+      const message = { roomCode: this.currentRoomCode, word };
+      this.socket.emit('vote-word', message);
+      this.logNetworkMessage('vote-word', message, 'sent');
+    } catch (error) {
+      this.handleError(error as GameError);
+    }
   }
 
-  /**
-   * Submit drawing
-   */
   submitDrawing(canvasData: string): void {
-    if (!this.socket) {
-      console.error('Cannot submit drawing: socket not connected');
-      return;
-    }
+    try {
+      validateCanvasData(canvasData);
 
-    this.socket.emit('submit-drawing', { roomCode: this.currentRoomCode, canvasData });
+      if (!this.socket || !this.socket.connected) {
+        throw createGameError(
+          GameErrorCode.CONNECTION_LOST,
+          'Cannot submit drawing: not connected to server',
+          {},
+          true
+        );
+      }
+
+      const message = { roomCode: this.currentRoomCode, canvasData };
+      this.socket.emit('submit-drawing', message);
+      this.logNetworkMessage('submit-drawing', { roomCode: this.currentRoomCode, canvasDataSize: canvasData.length }, 'sent');
+    } catch (error) {
+      this.handleError(error as GameError);
+    }
   }
 
   /**
@@ -309,47 +473,119 @@ export class SocketGameManager {
     this.socket.emit('finish-drawing', { roomCode: this.currentRoomCode });
   }
 
-  // Utility methods
+  // Connection Management
+  disconnect(): void {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.connectionStatus = 'disconnected';
+      this.logNetworkMessage('disconnect', {}, 'sent');
+    }
+  }
 
-  /**
-   * Get current game state
-   */
+  getConnectionStatus(): 'connecting' | 'connected' | 'disconnected' | 'error' {
+    return this.connectionStatus;
+  }
+
+  // State Management
   getGameState(): GameState | null {
     return this.gameState;
   }
 
-  /**
-   * Check if current player is host
-   */
-  getIsHost(): boolean {
-    return this.isHost;
+  onStateChange(callback: GameStateChangeCallback): void {
+    this.stateChangeCallbacks.add(callback);
   }
 
-  /**
-   * Get room ID
-   */
-  getRoomId(): string {
+  offStateChange(callback: GameStateChangeCallback): void {
+    this.stateChangeCallbacks.delete(callback);
+  }
+
+  // Error Handling
+  onError(callback: GameErrorCallback): void {
+    this.errorCallbacks.add(callback);
+  }
+
+  offError(callback: GameErrorCallback): void {
+    this.errorCallbacks.delete(callback);
+  }
+
+  getLastError(): GameError | null {
+    return this.lastError;
+  }
+
+  clearError(): void {
+    this.lastError = null;
+  }
+
+  // Utility Methods
+  isHost(): boolean {
+    return this.isHostPlayer;
+  }
+
+  getRoomCode(): string {
     return this.currentRoomCode;
   }
 
-  /**
-   * Set tie breaker callbacks
-   */
+  getCurrentPlayer(): Player | null {
+    if (!this.gameState || !this.playerName) {
+      return null;
+    }
+    
+    return this.gameState.players.find(p => p.name === this.playerName) || null;
+  }
+
   setTieBreakerCallbacks(callbacks: TieBreakerCallbacks): void {
     this.tieBreakerCallbacks = callbacks;
   }
 
-  /**
-   * Cleanup and disconnect
-   */
   destroy(): void {
+    this.disconnect();
+    this.stateChangeCallbacks.clear();
+    this.errorCallbacks.clear();
+    this.networkMessages = [];
+    this.gameState = null;
+    this.lastError = null;
+    
     if (this.socket) {
-      this.socket.disconnect();
+      this.socket.removeAllListeners();
       this.socket = null;
     }
   }
 
+  // Development Tools (optional methods)
+  enableDevMode?(): void {
+    console.log('🧪 Development mode enabled for SocketGameManager');
+  }
+
+  simulateGameState?(state: Partial<GameState>): void {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🧪 Simulating game state:', state);
+      this.updateGameState(state);
+    }
+  }
+
+  getNetworkMessages?(): NetworkMessage[] {
+    return [...this.networkMessages];
+  }
+
+  exportGameSession?(): string {
+    return JSON.stringify({
+      gameState: this.gameState,
+      networkMessages: this.networkMessages,
+      lastError: this.lastError,
+      connectionStatus: this.connectionStatus,
+      timestamp: new Date().toISOString()
+    }, null, 2);
+  }
+
+  // Legacy methods for backward compatibility
+  getIsHost(): boolean {
+    return this.isHost();
+  }
+
+  getRoomId(): string {
+    return this.getRoomCode();
+  }
+
   // Optional callback handlers for additional events
   public onRealTimeStroke?: (playerId: string, strokeData: any) => void;
-  public onError?: (message: string) => void;
 }

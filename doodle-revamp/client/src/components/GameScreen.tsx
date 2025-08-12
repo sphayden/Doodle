@@ -132,9 +132,10 @@ const GameScreen: React.FC<GameScreenProps> = ({
         fabricCanvasRef.current = null;
       };
     }
-  }, []);
+  }, []);  // Canvas initialization only happens once
 
   // Update brush settings when they change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (fabricCanvasRef.current) {
       if (!fabricCanvasRef.current.freeDrawingBrush) {

@@ -809,31 +809,6 @@ export class SocketGameManager implements GameManager {
     this.isHostPlayer = false;
   }
 
-  // Development Tools (optional methods)
-  enableDevMode?(): void {
-    console.log('🧪 Development mode enabled for SocketGameManager');
-  }
-
-  simulateGameState?(state: Partial<GameState>): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🧪 Simulating game state:', state);
-      this.updateGameState(state);
-    }
-  }
-
-  getNetworkMessages?(): NetworkMessage[] {
-    return [...this.networkMessages];
-  }
-
-  exportGameSession?(): string {
-    return JSON.stringify({
-      gameState: this.gameState,
-      networkMessages: this.networkMessages,
-      lastError: this.lastError,
-      connectionStatus: this.connectionStatus,
-      timestamp: new Date().toISOString()
-    }, null, 2);
-  }
 
   // Legacy methods for backward compatibility
   getIsHost(): boolean {
@@ -846,4 +821,95 @@ export class SocketGameManager implements GameManager {
 
   // Optional callback handlers for additional events
   public onRealTimeStroke?: (playerId: string, strokeData: any) => void;
+
+  /**
+   * DevTools: Simulate partial game state changes for testing
+   */
+  simulateState(partialState: Partial<GameState>): void {
+    if (!this.gameState) {
+      console.warn('Cannot simulate state: No current game state');
+      return;
+    }
+
+    console.log('🎮 SocketGameManager: Simulating state changes:', partialState);
+    
+    // Merge the partial state with current state
+    this.gameState = {
+      ...this.gameState,
+      ...partialState
+    };
+
+    // Record state change for debugging (if DevTools is attached)
+    if (this.devToolsService) {
+      this.devToolsService.recordStateChange(this.gameState);
+    }
+
+    // Notify all state change callbacks
+    this.stateChangeCallbacks.forEach(callback => {
+      try {
+        callback(this.gameState!);
+      } catch (error) {
+        console.error('Error in state change callback:', error);
+      }
+    });
+  }
+
+  /**
+   * DevTools: Reference to DevTools service for debugging
+   */
+  private devToolsService: any = null;
+
+  /**
+   * DevTools: Set DevTools service reference
+   */
+  setDevToolsService(devToolsService: any): void {
+    this.devToolsService = devToolsService;
+  }
+
+  /**
+   * DevTools: Enable development mode features
+   */
+  enableDevMode(): void {
+    console.log('🛠️ SocketGameManager: Development mode enabled');
+    
+    // Initialize with a basic game state if none exists
+    if (!this.gameState) {
+      this.gameState = {
+        roomCode: 'DEV-ROOM',
+        isConnected: true,
+        connectionStatus: 'connected',
+        players: [],
+        currentPlayer: {
+          id: 'dev-player',
+          name: 'DevPlayer',
+          isHost: true,
+          isConnected: true,
+          hasVoted: false,
+          hasSubmittedDrawing: false,
+          score: 0
+        },
+        hostId: 'dev-player',
+        playerCount: 0,
+        maxPlayers: 8,
+        gamePhase: 'lobby',
+        wordOptions: [],
+        voteCounts: {},
+        chosenWord: '',
+        timeRemaining: 0,
+        drawingTimeLimit: 60,
+        submittedDrawings: 0,
+        results: []
+      };
+    }
+
+    // Enable additional logging for development
+    this.connectionStatus = 'connected';
+  }
+
+  /**
+   * DevTools: Get access to socket for message interception
+   */
+  getSocket(): Socket | null {
+    return this.socket;
+  }
 }

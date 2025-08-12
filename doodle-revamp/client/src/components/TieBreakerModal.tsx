@@ -151,12 +151,12 @@ const TieBreakerModal: React.FC<TieBreakerModalProps> = ({
     const path = getSegmentPath(CENTER, CENTER, RADIUS, startAngle, endAngle);
     const color = getColorForWord(option, usedColors);
     usedColors.add(color); // Track this color as used
-    const midAngle = startAngle + anglePerSegment / 2;
+    // const midAngle = startAngle + anglePerSegment / 2;
 
     // Calculate centroid for text placement (center of the segment)
-    const centroidRadius = RADIUS * 0.6; // Position text at 60% of radius
-    const x = CENTER + centroidRadius * Math.cos((Math.PI / 180) * midAngle);
-    const y = CENTER + centroidRadius * Math.sin((Math.PI / 180) * midAngle);
+    // const centroidRadius = RADIUS * 0.6; // Position text at 60% of radius
+    // const x = CENTER + centroidRadius * Math.cos((Math.PI / 180) * midAngle);
+    // const y = CENTER + centroidRadius * Math.sin((Math.PI / 180) * midAngle);
     
     return { path, color, text: option, i };
   });

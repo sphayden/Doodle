@@ -41,7 +41,7 @@ export function validatePlayerName(name: string): void {
   }
   
   // Check for invalid characters
-  const invalidChars = /[<>\"'&]/;
+  const invalidChars = /[<>"'&]/;
   if (invalidChars.test(name)) {
     throw createGameError(
       GameErrorCode.INVALID_PLAYER_NAME,
@@ -236,7 +236,7 @@ export function sanitizePlayerName(name: string): string {
   
   return name
     .trim()
-    .replace(/[<>\"'&]/g, '') // Remove dangerous characters
+    .replace(/[<>"'&]/g, '') // Remove dangerous characters
     .substring(0, 50); // Limit length
 }
 

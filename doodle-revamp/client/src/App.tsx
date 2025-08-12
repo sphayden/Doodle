@@ -9,6 +9,9 @@ import TestUtils from './utils/TestUtils';
 import ConnectionStatus from './components/ConnectionStatus';
 import ErrorModal from './components/ErrorModal';
 import ReconnectionProgress from './components/ReconnectionProgress';
+import DevTools from './components/DevTools';
+import { DevToolsService } from './services/DevToolsService';
+import { TEST_SCENARIOS } from './services/TestScenarios';
 import { 
   GameManager, 
   GameState, 
@@ -38,6 +41,8 @@ interface AppState {
   reconnectionAttempt: number;
   maxReconnectionAttempts: number;
   nextAttemptIn: number;
+  showDevTools: boolean;
+  devToolsService: DevToolsService | null;
 }
 
 function App() {
@@ -58,8 +63,28 @@ function App() {
     showReconnectionProgress: false,
     reconnectionAttempt: 0,
     maxReconnectionAttempts: 5,
-    nextAttemptIn: 0
+    nextAttemptIn: 0,
+    showDevTools: false,
+    devToolsService: null
   });
+
+  // DevTools keyboard shortcut (Ctrl+Shift+D or Cmd+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (process.env.NODE_ENV === 'development' && 
+          event.shiftKey && 
+          (event.ctrlKey || event.metaKey) && 
+          event.key === 'D') {
+        event.preventDefault();
+        handleShowDevTools();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleShowDevTools]);
 
   useEffect(() => {
     return () => {
@@ -132,6 +157,13 @@ function App() {
       // Set up error handling
       gameManager.onError(handleGameError);
       
+      // Initialize DevTools service
+      const devToolsService = new DevToolsService(gameManager);
+      gameManager.setDevToolsService?.(devToolsService);
+      if (process.env.NODE_ENV === 'development') {
+        gameManager.enableDevMode?.();
+      }
+      
       console.log('Calling hostGame...');
       const roomCode = await gameManager.hostGame(playerName);
       console.log('Host game successful, roomCode:', roomCode);
@@ -139,6 +171,7 @@ function App() {
       setAppState(prev => ({
         ...prev,
         gameManager,
+        devToolsService,
         isHost: true,
         roomCode,
         currentScreen: 'lobby',
@@ -189,11 +222,19 @@ function App() {
       // Set up error handling
       gameManager.onError(handleGameError);
       
+      // Initialize DevTools service
+      const devToolsService = new DevToolsService(gameManager);
+      gameManager.setDevToolsService?.(devToolsService);
+      if (process.env.NODE_ENV === 'development') {
+        gameManager.enableDevMode?.();
+      }
+      
       await gameManager.joinGame(appState.playerName, roomCode);
 
       setAppState(prev => ({
         ...prev,
         gameManager,
+        devToolsService,
         isHost: false,
         roomCode,
         currentScreen: 'lobby',
@@ -398,6 +439,21 @@ function App() {
     }));
   };
 
+  // DevTools handlers
+  const handleShowDevTools = useCallback(() => {
+    setAppState(prev => ({
+      ...prev,
+      showDevTools: true
+    }));
+  }, []);
+
+  const handleHideDevTools = useCallback(() => {
+    setAppState(prev => ({
+      ...prev,
+      showDevTools: false
+    }));
+  }, []);
+
   const renderCurrentScreen = () => {
     console.log('Rendering screen:', appState.currentScreen, 'isHost:', appState.isHost, 'roomCode:', appState.roomCode);
     switch (appState.currentScreen) {
@@ -531,6 +587,31 @@ function App() {
           className="connection-status-fixed"
         />
       )}
+
+      {/* DevTools Button - Only show in development */}
+      {process.env.NODE_ENV === 'development' && appState.devToolsService && (
+        <button
+          onClick={handleShowDevTools}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 1000,
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: '50px',
+            height: '50px',
+            fontSize: '20px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+          }}
+          title="Open DevTools (Ctrl+Shift+D)"
+        >
+          🛠️
+        </button>
+      )}
       
       {renderCurrentScreen()}
       
@@ -545,7 +626,7 @@ function App() {
 
       <ErrorModal
         show={appState.showErrorModal}
-        error={appState.gameState?.lastError || null}
+        error={appState.gameManager?.getLastError() || null}
         onHide={clearError}
         onRetry={handleRetry}
         onReconnect={handleReconnect}
@@ -563,12 +644,41 @@ function App() {
         error={appState.error}
       />
 
+      {/* Developer Tools Panel */}
+      {appState.devToolsService && (
+        <DevTools
+          show={appState.showDevTools}
+          onHide={() => setAppState(prev => ({ ...prev, showDevTools: false }))}
+          devToolsService={appState.devToolsService}
+        />
+      )}
+
+      {/* DevTools Toggle Button - Only show in development with active game */}
+      {process.env.NODE_ENV === 'development' && appState.devToolsService && (
+        <button
+          className="btn btn-outline-secondary position-fixed"
+          style={{ bottom: '20px', right: '20px', zIndex: 1060 }}
+          onClick={() => setAppState(prev => ({ ...prev, showDevTools: !prev.showDevTools }))}
+        >
+          🛠️ DevTools
+        </button>
+      )}
+
       {/* Development Test Panel - Only show in development */}
       {process.env.NODE_ENV === 'development' && (
         <TestUtils
           onSimulateTie={simulateTie}
           onSimulateVoting={simulateVoting}
           onSimulateGameStart={simulateGameStart}
+        />
+      )}
+
+      {/* DevTools Modal - Only show in development */}
+      {process.env.NODE_ENV === 'development' && appState.devToolsService && (
+        <DevTools
+          show={appState.showDevTools}
+          onHide={handleHideDevTools}
+          devToolsService={appState.devToolsService}
         />
       )}
     </div>

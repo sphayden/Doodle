@@ -16,6 +16,9 @@ import { validatePlayerName, validateRoomCode, validateCanvasData, validateVote 
 import { ErrorHandler } from '../utils/errorHandling';
 import { NetworkResilienceManager } from '../utils/networkResilience';
 import { ErrorRecoveryManager } from '../utils/errorRecovery';
+import config from '../config/environment';
+import logger from '../utils/logger';
+import performanceMonitor from '../utils/performanceMonitor';
 
 // Legacy interface for backward compatibility
 export interface AIResult extends GameResult {}
@@ -54,13 +57,17 @@ export class SocketGameManager implements GameManager {
   constructor(onStateChange: GameStateChangeCallback, tieBreakerCallbacks?: TieBreakerCallbacks) {
     this.onStateChange(onStateChange);
     this.tieBreakerCallbacks = tieBreakerCallbacks || null;
-    this.serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+    this.serverUrl = config.serverUrl;
+    this.maxReconnectAttempts = config.reconnectAttempts;
+    this.reconnectDelay = config.reconnectDelay;
+    this.connectionTimeout = config.socketTimeout;
     
     // Initialize enhanced error handling
     this.errorHandler = new ErrorHandler();
     this.networkResilience = new NetworkResilienceManager();
     this.errorRecovery = new ErrorRecoveryManager();
     
+    logger.info(`SocketGameManager initialized with server: ${this.serverUrl}`, 'NETWORK');
     this.initializeSocket();
   }
 
@@ -429,11 +436,15 @@ export class SocketGameManager implements GameManager {
   // GameManager Interface Implementation
 
   async hostGame(playerName: string): Promise<string> {
+    logger.info('Attempting to host game', 'GAME', { playerName });
+    performanceMonitor.startTiming('host_game', 'GAME');
+    
     return await this.networkResilience.executeWithResilience(
       async () => {
         try {
           validatePlayerName(playerName);
           this.playerName = playerName;
+          logger.setUserId(playerName);
           
           if (!this.socket) {
             this.initializeSocket();

@@ -1,23 +1,58 @@
-require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const GameManager = require('./gameManager');
+const { getConfig, validateConfig, logCurrentConfig } = require('./config/environment');
+const logger = require('./utils/logger');
+
+// Initialize configuration
+const config = getConfig();
+
+// Validate configuration
+const configValidation = validateConfig();
+if (!configValidation.isValid) {
+  logger.error('Configuration validation failed', 'CONFIG', { errors: configValidation.errors });
+  process.exit(1);
+}
+
+// Log configuration in development
+logCurrentConfig();
+logger.info('Server starting up', 'SYSTEM', { environment: config.environment });
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: config.corsOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
+// Performance monitoring middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    const responseTime = Date.now() - startTime;
+    logger.logAccess(req, res, responseTime);
+    
+    // Log slow requests
+    if (responseTime > 1000) {
+      logger.warn(`Slow request: ${req.method} ${req.url}`, 'PERFORMANCE', {
+        responseTime,
+        statusCode: res.statusCode
+      });
+    }
+  });
+  
+  next();
+});
+
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  origin: config.corsOrigins,
   credentials: true
 }));
 app.use(express.json());
@@ -235,11 +270,14 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`🚀 Doodle server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🎨 OpenAI API: ${process.env.OPENAI_API_KEY ? 'Configured' : 'Not configured'}`);
+server.listen(config.port, config.host, () => {
+  logger.info(`Server started on ${config.host}:${config.port}`, 'SYSTEM', {
+    environment: config.environment,
+    clientUrl: config.clientUrl,
+    aiJudging: config.enableAiJudging,
+    openaiConfigured: !!config.openaiApiKey,
+    metricsEnabled: config.enableMetrics
+  });
 });
 
 // Graceful shutdown

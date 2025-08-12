@@ -5,12 +5,14 @@ import LobbyScreen from './components/LobbyScreen';
 import VotingScreen from './components/VotingScreen';
 import GameScreen from './components/GameScreen';
 import TieBreakerModal from './components/TieBreakerModal';
+import ResultsScreen from './components/ResultsScreen';
 import TestUtils from './utils/TestUtils';
 import ConnectionStatus from './components/ConnectionStatus';
 import ErrorModal from './components/ErrorModal';
 import ReconnectionProgress from './components/ReconnectionProgress';
 import DevTools from './components/DevTools';
 import { DevToolsService } from './services/DevToolsService';
+import config, { logCurrentConfig, validateConfig } from './config/environment';
 // TEST_SCENARIOS imported in DevTools component
 import { 
   GameManager, 
@@ -46,6 +48,16 @@ interface AppState {
 }
 
 function App() {
+  // Initialize configuration and validate it
+  useEffect(() => {
+    const configValidation = validateConfig();
+    if (!configValidation.isValid) {
+      console.error('❌ Configuration validation failed:', configValidation.errors);
+    } else {
+      logCurrentConfig();
+    }
+  }, []);
+
   const [appState, setAppState] = useState<AppState>({
     currentScreen: 'start',
     playerName: '',
@@ -157,7 +169,7 @@ function App() {
       // Initialize DevTools service
       const devToolsService = new DevToolsService(gameManager);
       gameManager.setDevToolsService?.(devToolsService);
-      if (process.env.NODE_ENV === 'development') {
+      if (config.enableDebugMode) {
         gameManager.enableDevMode?.();
       }
       
@@ -222,7 +234,7 @@ function App() {
       // Initialize DevTools service
       const devToolsService = new DevToolsService(gameManager);
       gameManager.setDevToolsService?.(devToolsService);
-      if (process.env.NODE_ENV === 'development') {
+      if (config.enableDebugMode) {
         gameManager.enableDevMode?.();
       }
       
@@ -460,7 +472,7 @@ function App() {
   // DevTools keyboard shortcut (Ctrl+Shift+D or Cmd+Shift+D)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (process.env.NODE_ENV === 'development' && 
+      if (config.enableDevTools && 
           event.shiftKey && 
           (event.ctrlKey || event.metaKey) && 
           event.key === 'D') {
@@ -554,22 +566,9 @@ function App() {
       case 'results':
         if (!appState.gameState) return null;
         return (
-          <div className="results-screen">
-            <h2>AI Judging Results!</h2>
-            <div className="results-container">
-              {appState.gameState.results.map((result, index) => (
-                <div key={result.playerId} className="result-item">
-                  <div className="rank">#{result.rank}</div>
-                  <div className="player-info">
-                    <h3>{result.playerName}</h3>
-                    <p>Score: {result.score}/100</p>
-                    <p>{result.feedback}</p>
-                  </div>
-                  <img src={result.canvasData} alt={`${result.playerName}'s drawing`} className="result-drawing" />
-                </div>
-              ))}
-            </div>
-            <button onClick={() => {
+          <ResultsScreen
+            gameState={appState.gameState}
+            onNewGame={() => {
               if (appState.gameManager) {
                 appState.gameManager.destroy();
               }
@@ -580,10 +579,23 @@ function App() {
                 gameState: null,
                 connectionStatus: 'disconnected'
               }));
-            }}>
-              New Game
-            </button>
-          </div>
+            }}
+            onPlayAgain={() => {
+              // Reset to lobby for same players to play again
+              if (appState.gameManager) {
+                // Could implement play again logic here
+                // For now, just go to new game
+                appState.gameManager.destroy();
+              }
+              setAppState(prev => ({ 
+                ...prev, 
+                currentScreen: 'start', 
+                gameManager: null, 
+                gameState: null,
+                connectionStatus: 'disconnected'
+              }));
+            }}
+          />
         );
               default:
         return <StartScreen 
@@ -609,8 +621,8 @@ function App() {
         />
       )}
 
-      {/* DevTools Button - Only show in development */}
-      {process.env.NODE_ENV === 'development' && appState.devToolsService && (
+      {/* DevTools Button - Only show when enabled */}
+      {config.enableDevTools && appState.devToolsService && (
         <button
           onClick={handleShowDevTools}
           style={{
@@ -685,8 +697,8 @@ function App() {
         </button>
       )}
 
-      {/* Development Test Panel - Only show in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* Development Test Panel - Only show when enabled */}
+      {config.enableTestUtils && (
         <TestUtils
           onSimulateTie={simulateTie}
           onSimulateVoting={simulateVoting}
@@ -694,8 +706,8 @@ function App() {
         />
       )}
 
-      {/* DevTools Modal - Only show in development */}
-      {process.env.NODE_ENV === 'development' && appState.devToolsService && (
+      {/* DevTools Modal - Only show when enabled */}
+      {config.enableDevTools && appState.devToolsService && (
         <DevTools
           show={appState.showDevTools}
           onHide={handleHideDevTools}

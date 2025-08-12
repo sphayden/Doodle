@@ -124,8 +124,12 @@ class GameManager {
    * Automatically resolve tiebreaker with random selection
    */
   async autoResolveTiebreaker(roomCode) {
+    console.log(`🎲 [MANAGER] Auto-resolving tiebreaker for room: ${roomCode}`);
+    console.log(`🎲 [MANAGER] Available rooms:`, Array.from(this.rooms.keys()));
+    
     const room = this.rooms.get(roomCode);
     if (!room) {
+      console.error(`🎲 [MANAGER] Room not found: ${roomCode}. Available rooms:`, Array.from(this.rooms.keys()));
       throw new Error('Room not found');
     }
     
@@ -225,12 +229,27 @@ class GameManager {
    * Clean up empty room
    */
   cleanupRoom(roomCode) {
+    // Don't cleanup rooms that have pending tiebreaker timeouts
+    if (global.tiebreakerTimeouts && global.tiebreakerTimeouts.has(roomCode)) {
+      console.log(`🎲 [MANAGER] Delaying room cleanup for ${roomCode} - tiebreaker in progress`);
+      return;
+    }
+
     const room = this.rooms.get(roomCode);
     if (room) {
       // Remove all players from playerRooms map
       for (const playerId of room.players.keys()) {
         this.playerRooms.delete(playerId);
       }
+      
+      // Clean up any pending tiebreaker timeouts
+      if (global.tiebreakerTimeouts && global.tiebreakerTimeouts.has(roomCode)) {
+        const { timeout } = global.tiebreakerTimeouts.get(roomCode);
+        clearTimeout(timeout);
+        global.tiebreakerTimeouts.delete(roomCode);
+        console.log(`🎲 [MANAGER] Cleared pending tiebreaker timeout for room: ${roomCode}`);
+      }
+      
       this.rooms.delete(roomCode);
       console.log(`Room cleaned up: ${roomCode}`);
     }

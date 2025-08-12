@@ -128,13 +128,13 @@ export class AutomatedTestRunner {
               await this.delay(200);
               
               const gameState = this.devToolsService.inspectGameState();
-              if (!gameState || !gameState.votes) {
+              if (!gameState || !gameState.voteCounts) {
                 throw new Error('No voting state found');
               }
               
               // Check if tie is properly detected
-              const catVotes = gameState.votes['cat'] || 0;
-              const dogVotes = gameState.votes['dog'] || 0;
+              const catVotes = gameState.voteCounts['cat'] || 0;
+              const dogVotes = gameState.voteCounts['dog'] || 0;
               
               if (catVotes !== dogVotes) {
                 throw new Error('Tie not properly simulated');

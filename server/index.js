@@ -114,6 +114,7 @@ io.on('connection', (socket) => {
         // Auto-resolve after 3 seconds for visual feedback
         setTimeout(async () => {
           try {
+            console.log(`🎲 [SERVER] Starting auto-resolve for room: ${roomCode} after 3 second delay`);
             const resolvedResult = await gameManager.autoResolveTiebreaker(roomCode);
             console.log(`Tiebreaker auto-resolved in room: ${roomCode}, chose: ${resolvedResult.tiebreaker.chosenWord} from`, resolvedResult.tiebreaker.tiedWords);
             
@@ -123,11 +124,16 @@ io.on('connection', (socket) => {
               maxVotes: resolvedResult.tiebreaker.maxVotes
             });
             
-            // Start drawing after another short delay
-            setTimeout(() => {
+            // Wait for client to signal tiebreaker animation completion
+            // Fallback timeout in case client doesn't respond
+            const fallbackTimeout = setTimeout(() => {
               io.to(roomCode).emit('drawing-started', { gameState: resolvedResult });
-              console.log(`Drawing phase started in room: ${roomCode}, word: ${resolvedResult.chosenWord}`);
-            }, 1500);
+              console.log(`Drawing phase started in room: ${roomCode} (fallback timeout), word: ${resolvedResult.chosenWord}`);
+            }, 8000); // 8 second fallback
+            
+            // Store the timeout so we can clear it when client responds
+            if (!global.tiebreakerTimeouts) global.tiebreakerTimeouts = new Map();
+            global.tiebreakerTimeouts.set(roomCode, { timeout: fallbackTimeout, gameState: resolvedResult });
             
           } catch (error) {
             console.error('Error auto-resolving tiebreaker:', error);
@@ -142,6 +148,34 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Error voting for word:', error);
       socket.emit('error', { message: error.message });
+    }
+  });
+
+  // Handle tiebreaker animation completion from client
+  socket.on('tiebreaker-animation-complete', async (data) => {
+    try {
+      const { roomCode } = data;
+      console.log(`🎲 Tiebreaker animation completed in room: ${roomCode} from socket: ${socket.id}`);
+      
+      // Check if we have a pending drawing start for this room
+      if (global.tiebreakerTimeouts && global.tiebreakerTimeouts.has(roomCode)) {
+        const { timeout, gameState } = global.tiebreakerTimeouts.get(roomCode);
+        
+        // Clear the fallback timeout
+        clearTimeout(timeout);
+        global.tiebreakerTimeouts.delete(roomCode);
+        
+        // Start drawing phase now
+        io.to(roomCode).emit('drawing-started', { gameState });
+        console.log(`Drawing phase started in room: ${roomCode} (client-triggered), word: ${gameState.chosenWord}`);
+      } else {
+        console.log(`🎲 No pending tiebreaker timeout found for room: ${roomCode}`);
+        if (global.tiebreakerTimeouts) {
+          console.log(`🎲 Available timeouts:`, Array.from(global.tiebreakerTimeouts.keys()));
+        }
+      }
+    } catch (error) {
+      console.error('Error handling tiebreaker animation completion:', error);
     }
   });
 

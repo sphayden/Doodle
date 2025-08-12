@@ -288,7 +288,7 @@ export class SocketGameManager implements GameManager {
     this.socket.on('tiebreaker-resolved', (data) => {
       console.log('🎲 Tiebreaker resolved by server, chosen word:', data.chosenWord);
       
-      // Update the tiebreaker modal with the server-chosen word
+      // Update the tiebreaker modal with the winning word (without restarting animation)
       this.tieBreakerCallbacks?.onTieDetected(
         data.tiedWords,
         data.chosenWord // Server-determined winning word
@@ -687,6 +687,23 @@ export class SocketGameManager implements GameManager {
     // Note: Manual tiebreaker resolution removed - server handles all tiebreakers automatically
     // This method is kept for interface compatibility but does nothing
     console.log('🎲 Tiebreaker will be resolved automatically by server');
+  }
+
+  notifyTiebreakerAnimationComplete(): void {
+    if (!this.socket || !this.socket.connected) {
+      console.error('Cannot notify tiebreaker completion: socket not connected');
+      return;
+    }
+
+    if (!this.currentRoomCode) {
+      console.error('Cannot notify tiebreaker completion: no room code');
+      return;
+    }
+
+    console.log('🎲 Notifying server that tiebreaker animation is complete');
+    this.socket.emit('tiebreaker-animation-complete', { 
+      roomCode: this.currentRoomCode 
+    });
   }
 
   /**

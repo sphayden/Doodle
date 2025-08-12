@@ -194,6 +194,11 @@ export class MockGameManager implements GameManager {
     this.notifyStateChange();
   }
 
+  notifyTiebreakerAnimationComplete(): void {
+    // Mock implementation - just log the notification
+    console.log('Mock: Tiebreaker animation complete notification');
+  }
+
   getGameState(): GameState {
     return { ...this.gameState };
   }

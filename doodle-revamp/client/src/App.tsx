@@ -11,7 +11,7 @@ import ErrorModal from './components/ErrorModal';
 import ReconnectionProgress from './components/ReconnectionProgress';
 import DevTools from './components/DevTools';
 import { DevToolsService } from './services/DevToolsService';
-import { TEST_SCENARIOS } from './services/TestScenarios';
+// TEST_SCENARIOS imported in DevTools component
 import { 
   GameManager, 
   GameState, 
@@ -68,23 +68,7 @@ function App() {
     devToolsService: null
   });
 
-  // DevTools keyboard shortcut (Ctrl+Shift+D or Cmd+Shift+D)
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (process.env.NODE_ENV === 'development' && 
-          event.shiftKey && 
-          (event.ctrlKey || event.metaKey) && 
-          event.key === 'D') {
-        event.preventDefault();
-        handleShowDevTools();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleShowDevTools]);
+  // DevTools keyboard shortcut moved after handlers are defined
 
   useEffect(() => {
     return () => {
@@ -96,16 +80,29 @@ function App() {
   }, [appState.gameManager]);
 
   const handleGameStateChange = useCallback((gameState: GameState) => {
-    setAppState(prev => ({
-      ...prev,
-      gameState: gameState,
-      roomCode: gameState.roomCode,
-      connectionStatus: gameState.connectionStatus,
-      currentScreen: gameState.gamePhase === 'lobby' ? 'lobby' : 
-                     gameState.gamePhase === 'voting' ? 'voting' :
-                     gameState.gamePhase === 'drawing' ? 'game' :
-                     gameState.gamePhase === 'results' ? 'results' : 'lobby'
-    }));
+    setAppState(prev => {
+      // Hide tiebreaker modal when drawing phase starts
+      const shouldHideTiebreaker = prev.showTieBreaker && gameState.gamePhase === 'drawing';
+      
+      if (shouldHideTiebreaker) {
+        console.log('🎲 [APP] Hiding tiebreaker modal - drawing phase started');
+      }
+      
+      return {
+        ...prev,
+        gameState: gameState,
+        roomCode: gameState.roomCode,
+        connectionStatus: gameState.connectionStatus,
+        currentScreen: gameState.gamePhase === 'lobby' ? 'lobby' : 
+                       gameState.gamePhase === 'voting' ? 'voting' :
+                       gameState.gamePhase === 'drawing' ? 'game' :
+                       gameState.gamePhase === 'results' ? 'results' : 'lobby',
+        // Hide tiebreaker modal when drawing starts
+        showTieBreaker: shouldHideTiebreaker ? false : prev.showTieBreaker,
+        tiedOptions: shouldHideTiebreaker ? [] : prev.tiedOptions,
+        winningWord: shouldHideTiebreaker ? '' : prev.winningWord
+      };
+    });
   }, []);
 
   const handleGameError = useCallback((error: GameError) => {
@@ -348,12 +345,18 @@ function App() {
   const handleTieSelectionComplete = (selectedOption: string) => {
     console.log('🎲 [APP] Tie selection complete, chosen word:', selectedOption);
     
+    // Notify server that tiebreaker animation is complete
+    if (appState.gameManager) {
+      console.log('🎲 [APP] Notifying server that tiebreaker animation is complete');
+      appState.gameManager.notifyTiebreakerAnimationComplete();
+    }
+    
     // Only call resolveTiebreaker if this is a manual selection (no server-determined winning word)
     if (appState.gameManager && !appState.winningWord) {
       console.log('🎲 [APP] Manual tiebreaker resolution, sending to server');
       appState.gameManager.resolveTiebreaker(selectedOption);
     } else {
-      console.log('🎲 [APP] Server-resolved tiebreaker, no need to send to server');
+      console.log('🎲 [APP] Server-resolved tiebreaker, animation complete');
     }
     
     // Hide the modal
@@ -453,6 +456,24 @@ function App() {
       showDevTools: false
     }));
   }, []);
+
+  // DevTools keyboard shortcut (Ctrl+Shift+D or Cmd+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (process.env.NODE_ENV === 'development' && 
+          event.shiftKey && 
+          (event.ctrlKey || event.metaKey) && 
+          event.key === 'D') {
+        event.preventDefault();
+        handleShowDevTools();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleShowDevTools]);
 
   const renderCurrentScreen = () => {
     console.log('Rendering screen:', appState.currentScreen, 'isHost:', appState.isHost, 'roomCode:', appState.roomCode);

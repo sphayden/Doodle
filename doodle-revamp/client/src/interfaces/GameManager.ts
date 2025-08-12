@@ -146,6 +146,11 @@ export interface GameManager {
   resolveTiebreaker(selectedOption: string): void;
   
   /**
+   * Notify server that tiebreaker animation has completed
+   */
+  notifyTiebreakerAnimationComplete(): void;
+  
+  /**
    * Send real-time drawing stroke data (for spectating)
    * @param strokeData Drawing stroke information
    */

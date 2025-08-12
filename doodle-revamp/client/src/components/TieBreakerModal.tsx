@@ -83,6 +83,7 @@ const TieBreakerModal: React.FC<TieBreakerModalProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [rotation, setRotation] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
+  const [initialWinningWord, setInitialWinningWord] = useState<string>('');
   const animationRef = useRef<number | null>(null);
 
   // Animate the spin
@@ -110,37 +111,87 @@ const TieBreakerModal: React.FC<TieBreakerModalProps> = ({
     }
   };
 
+  // Reset state when modal is first shown
   useEffect(() => {
     if (show && tiedOptions.length > 0) {
-      setIsSpinning(true);
+      // Reset all state when modal is first shown
+      setIsSpinning(false);
       setHasSpun(false);
+      setRotation(0);
+      setSelectedIndex(0);
+      setInitialWinningWord(winningWord || '');
+      
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    }
+  }, [show]);
+
+  // Start animation when modal is shown and we have tied options
+  useEffect(() => {
+    if (show && tiedOptions.length > 0 && !isSpinning && !hasSpun) {
+      console.log('🎲 Starting tiebreaker animation with options:', tiedOptions, 'winning word:', winningWord);
+      
+      setIsSpinning(true);
+      
       // Use server-determined winning word if provided, otherwise fall back to random
       let winner: number;
       if (winningWord) {
         winner = tiedOptions.indexOf(winningWord);
         if (winner === -1) {
           console.error('Winning word not found in tied options:', winningWord, tiedOptions);
-          return;
+          winner = Math.floor(Math.random() * tiedOptions.length);
         }
       } else {
         // Fallback to random selection for backward compatibility
         winner = Math.floor(Math.random() * tiedOptions.length);
       }
+      
       setSelectedIndex(winner);
       const spins = 5;
       const anglePerSegment = 360 / tiedOptions.length;
       const finalAngle = 360 * spins + (360 - (winner * anglePerSegment) - anglePerSegment / 2 - 90);
       let duration = 4000 + Math.random() * 1000;
-      setRotation(0);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      
       const start = performance.now();
       animationRef.current = requestAnimationFrame((ts) => animate(ts, start, duration, 0, finalAngle, winner));
     }
+    
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
     // eslint-disable-next-line
-  }, [show, tiedOptions, winningWord]);
+  }, [show, tiedOptions, isSpinning, hasSpun]);
+
+  // Handle winning word updates during animation (without restarting)
+  useEffect(() => {
+    if (winningWord && 
+        winningWord !== initialWinningWord && 
+        tiedOptions.length > 0 && 
+        isSpinning && 
+        !hasSpun) {
+      
+      const winner = tiedOptions.indexOf(winningWord);
+      if (winner !== -1) {
+        console.log('🎲 Updating winning word during animation:', winningWord);
+        setSelectedIndex(winner);
+        
+        // Recalculate the final angle for the new winner
+        const spins = 5;
+        const anglePerSegment = 360 / tiedOptions.length;
+        const finalAngle = 360 * spins + (360 - (winner * anglePerSegment) - anglePerSegment / 2 - 90);
+        
+        // Update the animation to target the new winner
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          const start = performance.now();
+          const currentRotation = rotation;
+          animationRef.current = requestAnimationFrame((ts) => animate(ts, start, 2000, currentRotation, finalAngle, winner));
+        }
+      }
+    }
+  }, [winningWord, initialWinningWord, tiedOptions, isSpinning, hasSpun, rotation]);
 
   // Draw segments and radial text
   const anglePerSegment = 360 / tiedOptions.length;

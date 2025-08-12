@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Card, Form, Alert, Tabs, Tab, Badge } from 'react-bootstrap';
-import { DevToolsService, TestResult, ValidationResult, NetworkMessage, GameScenario } from '../services/DevToolsService';
+import { DevToolsService, TestResult, ValidationResult, NetworkMessage } from '../services/DevToolsService';
 import { GameState } from '../interfaces/GameManager';
 import { TEST_SCENARIOS } from '../services/TestScenarios';
 import { AutomatedTestRunner, RegressionTestResult, TestSuite } from '../services/AutomatedTestRunner';
@@ -140,33 +140,7 @@ export const DevTools: React.FC<DevToolsProps> = ({ show, onHide, devToolsServic
     refreshGameState();
   };
 
-  const handleRunNetworkDegradationTest = async () => {
-    addTestResult({
-      success: true,
-      message: 'Network degradation test - feature coming soon',
-      duration: 0
-    });
-  };
-
-  const handleSimulateConnectionIssues = (severity: 'mild' | 'moderate' | 'severe') => {
-    switch (severity) {
-      case 'mild':
-        devToolsService.simulateNetworkError();
-        break;
-      case 'moderate':
-        devToolsService.simulateDisconnection();
-        break;
-      case 'severe':
-        devToolsService.simulateNetworkError();
-        setTimeout(() => devToolsService.simulateDisconnection(), 1000);
-        break;
-    }
-    addTestResult({
-      success: true,
-      message: `Simulated ${severity} connection issues`,
-      duration: 0
-    });
-  };
+  // Removed duplicate - using the version below that calls the actual service method
 
   const handleRunNetworkDegradationTest = async () => {
     const result = await devToolsService.simulateNetworkDegradation();

@@ -26,27 +26,92 @@ export interface AIResult extends GameResult {}
 // Re-export types for backward compatibility
 export type { GameState as SocketGameState, TieBreakerCallbacks } from '../interfaces';
 
+/**
+ * SocketGameManager - Socket.io-based implementation of the GameManager interface
+ * 
+ * This class provides a complete implementation of the GameManager interface using
+ * Socket.io for real-time communication with the game server. It handles connection
+ * management, error recovery, state synchronization, and all game operations.
+ * 
+ * Key Features:
+ * - Automatic reconnection with exponential backoff
+ * - Comprehensive error handling and recovery
+ * - Real-time state synchronization
+ * - Network resilience and timeout management
+ * - Development tools integration
+ * 
+ * @example
+ * ```typescript
+ * const gameManager = new SocketGameManager();
+ * gameManager.onStateChange((state) => {
+ *   console.log('Game state updated:', state);
+ * });
+ * 
+ * try {
+ *   const roomCode = await gameManager.hostGame('PlayerName');
+ *   console.log('Game hosted with room code:', roomCode);
+ * } catch (error) {
+ *   console.error('Failed to host game:', error);
+ * }
+ * ```
+ */
 export class SocketGameManager implements GameManager {
+  /** Socket.io client instance for server communication */
   private socket: Socket | null = null;
+  
+  /** Current game state synchronized with server */
   private gameState: GameState | null = null;
+  
+  /** Whether the current player is the host */
   private isHostPlayer: boolean = false;
+  
+  /** Set of callbacks to notify on state changes */
   private stateChangeCallbacks: Set<GameStateChangeCallback> = new Set();
+  
+  /** Set of callbacks to notify on errors */
   private errorCallbacks: Set<GameErrorCallback> = new Set();
+  
+  /** Callbacks for handling tie-breaker scenarios */
   private tieBreakerCallbacks: TieBreakerCallbacks | null = null;
+  
+  /** Name of the current player */
   private playerName: string = '';
+  
+  /** Current room code */
   private currentRoomCode: string = '';
+  
+  /** Last error that occurred */
   private lastError: GameError | null = null;
+  
+  /** History of network messages for debugging */
   private networkMessages: NetworkMessage[] = [];
+  
+  /** Current connection status */
   private connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' = 'disconnected';
   
   // Connection management properties
+  /** Current number of reconnection attempts */
   private reconnectAttempts: number = 0;
+  
+  /** Maximum number of reconnection attempts before giving up */
   private maxReconnectAttempts: number = 5;
+  
+  /** Current delay between reconnection attempts (increases exponentially) */
   private reconnectDelay: number = 2000; // Start with 2 seconds
+  
+  /** Timeout for connection attempts */
   private connectionTimeout: number = 10000; // 10 seconds
+  
+  /** Timer for reconnection attempts */
   private reconnectTimer: NodeJS.Timeout | null = null;
+  
+  /** Timer for connection timeout */
   private connectionTimer: NodeJS.Timeout | null = null;
+  
+  /** Whether the manager has been destroyed */
   private isDestroyed: boolean = false;
+  
+  /** Server URL for socket connection */
   private serverUrl: string;
   
   // Enhanced error handling
@@ -309,6 +374,11 @@ export class SocketGameManager implements GameManager {
 
     this.socket.on('drawing-submitted', (data) => {
       console.log('✅ Drawing submitted by:', data.playerId);
+      this.updateGameState(data.gameState);
+    });
+
+    this.socket.on('drawing-time-expired', (data) => {
+      console.log('⏰ Drawing time expired, starting judging');
       this.updateGameState(data.gameState);
     });
 

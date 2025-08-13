@@ -52,8 +52,8 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
         title: 'Connection Problem',
         variant: 'warning' as const,
         icon: '🔌',
-        showReconnect: true,
-        showRetry: true,
+        showReconnect: error.recoverable,
+        showRetry: error.recoverable,
         suggestions: [
           'Check your internet connection',
           'Try refreshing the page',

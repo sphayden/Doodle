@@ -1,5 +1,37 @@
 {
-  "dependencies": {
-    "socket.io-client": "^4.8.1"
-  }
+  "name": "doodle-game",
+  "version": "1.0.0",
+  "description": "Doodle multiplayer drawing game - unified startup",
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "cd server && npm start",
+    "start:client": "cd doodle-revamp/client && npm start",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd doodle-revamp/client && npm start",
+    "install:all": "npm run install:server && npm run install:client",
+    "install:server": "cd server && npm install",
+    "install:client": "cd doodle-revamp/client && npm install",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd doodle-revamp/client && npm test -- --watchAll=false",
+    "build": "npm run build:client",
+    "build:client": "cd doodle-revamp/client && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "multiplayer",
+    "drawing",
+    "game",
+    "socket.io",
+    "react",
+    "nodejs"
+  ],
+  "author": "Doodle Game Team",
+  "license": "MIT"
 }

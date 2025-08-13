@@ -89,7 +89,7 @@ describe('Game Logic Tests', () => {
 
   describe('Error Handling', () => {
     test('should handle network errors gracefully', () => {
-      mockGameManager.simulateError(GameErrorCode.NETWORK_ERROR);
+      mockGameManager.simulateError(GameErrorCode.CONNECTION_FAILED);
       
       // The error should be handled without crashing
       const gameState = mockGameManager.getGameState();
@@ -181,7 +181,7 @@ describe('Game Logic Tests', () => {
           {
             action: 'simulateState',
             data: {
-              votes: { cat: 2, dog: 2, bird: 2 }
+              voteCounts: { cat: 2, dog: 2, bird: 2 }
             }
           }
         ]
@@ -300,9 +300,10 @@ describe('Game Logic Tests', () => {
       expect(gameState.players).toHaveLength(1);
       expect(gameState.currentPlayer?.isHost).toBe(true);
       
-      // Validation should show warning but not error
+      // Validation should be valid for single player
       const validation = testingFramework.validateGameState(gameState);
-      expect(validation.warnings).toContain('No players in game');
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
     });
 
     test('should handle empty word options', () => {

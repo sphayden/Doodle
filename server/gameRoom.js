@@ -233,6 +233,11 @@ class GameRoom {
         clearInterval(this.drawingTimer);
         this.drawingTimer = null;
         this.startJudging();
+        
+        // Emit timer expired event so server can handle judging
+        if (this.onTimerExpired) {
+          this.onTimerExpired();
+        }
       }
     }, 1000);
   }
@@ -270,8 +275,26 @@ class GameRoom {
       this.drawingTimer = null;
     }
     
+    // Auto-submit empty drawings for players who haven't submitted
+    for (const [playerId, player] of this.players.entries()) {
+      if (!player.hasSubmittedDrawing) {
+        console.log(`⏰ Auto-submitting empty drawing for player: ${player.name} (${playerId})`);
+        // Submit an empty/blank canvas data
+        const emptyCanvasData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+        this.drawings.set(playerId, emptyCanvasData);
+        player.hasSubmittedDrawing = true;
+      }
+    }
+    
     this.gamePhase = 'judging';
     this.timeRemaining = 0;
+  }
+
+  /**
+   * Set callback for when drawing timer expires
+   */
+  setTimerExpiredCallback(callback) {
+    this.onTimerExpired = callback;
   }
 
   /**

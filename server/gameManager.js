@@ -17,6 +17,11 @@ class GameManager {
     const roomCode = generateRoomCode();
     const gameRoom = new GameRoom(roomCode, hostId);
     
+    // Set up timer expired callback
+    gameRoom.setTimerExpiredCallback(() => {
+      this.handleDrawingTimerExpired(roomCode);
+    });
+    
     // Add host as first player
     gameRoom.addPlayer(hostId, playerName, true);
     
@@ -47,6 +52,13 @@ class GameManager {
     
     if (room.gamePhase !== 'lobby') {
       throw new Error('Game already in progress');
+    }
+    
+    // Ensure timer callback is set (in case it wasn't set during creation)
+    if (!room.onTimerExpired) {
+      room.setTimerExpiredCallback(() => {
+        this.handleDrawingTimerExpired(roomCode);
+      });
     }
     
     room.addPlayer(playerId, playerName, false);
@@ -181,6 +193,54 @@ class GameManager {
     }
     
     return room.getGameState();
+  }
+
+  /**
+   * Handle drawing timer expiration
+   */
+  async handleDrawingTimerExpired(roomCode) {
+    console.log(`⏰ Drawing timer expired for room: ${roomCode}`);
+    
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      console.error(`Room not found when timer expired: ${roomCode}`);
+      return;
+    }
+    
+    if (room.gamePhase !== 'judging') {
+      console.error(`Room ${roomCode} not in judging phase when timer expired, current phase: ${room.gamePhase}`);
+      return;
+    }
+    
+    // Notify that timer expired and judging is starting
+    if (this.onTimerExpired) {
+      this.onTimerExpired(roomCode, room.getGameState());
+    }
+    
+    // Start AI judging automatically
+    try {
+      console.log(`🤖 Starting AI judging for room: ${roomCode} after timer expiration`);
+      const finalGameState = await this.startAIJudging(roomCode);
+      
+      // Notify that judging is complete
+      if (this.onJudgingComplete) {
+        this.onJudgingComplete(roomCode, finalGameState);
+      }
+    } catch (error) {
+      console.error(`Error during AI judging for room ${roomCode}:`, error);
+      if (this.onJudgingError) {
+        this.onJudgingError(roomCode, error);
+      }
+    }
+  }
+
+  /**
+   * Set callbacks for timer events
+   */
+  setTimerCallbacks(callbacks) {
+    this.onTimerExpired = callbacks.onTimerExpired;
+    this.onJudgingComplete = callbacks.onJudgingComplete;
+    this.onJudgingError = callbacks.onJudgingError;
   }
 
   /**

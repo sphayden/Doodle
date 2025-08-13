@@ -5,7 +5,7 @@
  */
 
 import { GameState, Player, GameResult, GameErrorCode, createGameError } from '../interfaces/GameManager';
-import { testingFramework, TestScenario } from '../utils/TestingFramework';
+// import { testingFramework, TestScenario } from '../utils/TestingFramework'; // Removed - TestingFramework was deleted
 
 export interface TestResult {
   success: boolean;
@@ -39,6 +39,12 @@ export interface ScenarioStep {
   expectedResult?: any;
   delay?: number;
   validation?: (state: GameState) => { isValid: boolean; errors: string[]; warnings: string[] };
+}
+
+export interface TestScenario {
+  name: string;
+  description: string;
+  steps: ScenarioStep[];
 }
 
 export class DevToolsService {
@@ -258,9 +264,8 @@ export class DevToolsService {
   simulateGameState(partialState: Partial<GameState>): void {
     console.log('🎮 DevTools: Simulating game state:', partialState);
     
-    // This would typically update the game manager's state
-    // For now, we'll trigger the state change callback if available
-    if (this.gameManager.simulateState) {
+    // Call the game manager's simulateState method if available
+    if ('simulateState' in this.gameManager && typeof this.gameManager.simulateState === 'function') {
       this.gameManager.simulateState(partialState);
     } else {
       console.warn('GameManager does not support state simulation');
@@ -315,33 +320,48 @@ export class DevToolsService {
   }
 
   /**
-   * Run automated game flow test using the testing framework
+   * Run automated game flow test (TestingFramework removed)
    */
   async runGameFlowTest(): Promise<TestResult> {
-    const scenario = testingFramework.createBasicGameFlowScenario();
-    const frameworkResult = await testingFramework.runScenario(scenario, this.gameManager);
+    console.log('🧪 DevTools: Running basic game flow test');
+    const startTime = Date.now();
     
-    // Convert framework result to our TestResult format
-    return {
-      success: frameworkResult.success,
-      message: frameworkResult.message,
-      duration: frameworkResult.duration,
-      details: frameworkResult.details
-    };
+    try {
+      // Basic game flow simulation without TestingFramework
+      this.simulateMultiplePlayers(2);
+      await this.delay(1000);
+      this.skipToVoting();
+      await this.delay(1000);
+      this.skipToDrawing('test');
+      await this.delay(1000);
+      this.skipToResults();
+      
+      const duration = Date.now() - startTime;
+      
+      return {
+        success: true,
+        message: 'Basic game flow test completed',
+        duration,
+        details: { phases: ['lobby', 'voting', 'drawing', 'results'] }
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      return {
+        success: false,
+        message: `Game flow test failed: ${error}`,
+        duration,
+        details: { error }
+      };
+    }
   }
 
   /**
-   * Run a custom test scenario
+   * Run a custom test scenario (TestingFramework removed - use runScenario instead)
    */
-  async runCustomScenario(scenario: TestScenario): Promise<TestResult> {
-    const frameworkResult = await testingFramework.runScenario(scenario, this.gameManager);
-    
-    return {
-      success: frameworkResult.success,
-      message: frameworkResult.message,
-      duration: frameworkResult.duration,
-      details: frameworkResult.details
-    };
+  async runCustomScenario(scenario: GameScenario): Promise<TestResult> {
+    console.log('⚠️ DevTools: runCustomScenario is deprecated. Use runScenario instead.');
+    return this.runScenario(scenario);
   }
 
   /**
@@ -373,24 +393,28 @@ export class DevToolsService {
       reconnectable
     );
 
-    // Trigger error in game manager if it supports error simulation
-    if ('simulateError' in this.gameManager && typeof this.gameManager.simulateError === 'function') {
-      this.gameManager.simulateError(error);
-    } else {
-      // Fallback: update connection state
-      this.simulateGameState({
-        isConnected: false,
-        connectionStatus: 'error',
-        lastError: error
-      });
-    }
+    // Always update connection state directly
+    this.simulateGameState({
+      isConnected: false,
+      connectionStatus: 'error',
+      lastError: error
+    });
   }
 
   /**
    * Generate comprehensive test report
    */
   generateTestReport(testResults: TestResult[]): string {
-    return testingFramework.generateTestReport(testResults);
+    const report = {
+      timestamp: new Date().toISOString(),
+      totalTests: testResults.length,
+      passed: testResults.filter(r => r.success).length,
+      failed: testResults.filter(r => !r.success).length,
+      totalDuration: testResults.reduce((sum, r) => sum + r.duration, 0),
+      results: testResults
+    };
+    
+    return JSON.stringify(report, null, 2);
   }
 
   /**

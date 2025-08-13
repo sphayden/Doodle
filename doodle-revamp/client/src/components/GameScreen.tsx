@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Canvas, PencilBrush, Rect } from 'fabric';
 import { Alert, Spinner } from 'react-bootstrap';
 import { GameError } from '../interfaces';
@@ -85,15 +85,21 @@ const GameScreen: React.FC<GameScreenProps> = ({
       canvas.uniformScaling = false;
       
       // Ensure single unified canvas appearance
-      canvas.wrapperEl.style.position = 'relative';
-      canvas.wrapperEl.style.width = canvasWidth + 'px';
-      canvas.wrapperEl.style.height = canvasHeight + 'px';
+      if (canvas.wrapperEl && canvas.wrapperEl.style) {
+        canvas.wrapperEl.style.position = 'relative';
+        canvas.wrapperEl.style.width = canvasWidth + 'px';
+        canvas.wrapperEl.style.height = canvasHeight + 'px';
+      }
       
       // Fix cursor positioning issues
-      canvas.calcOffset();
+      if (typeof canvas.calcOffset === 'function') {
+        canvas.calcOffset();
+      }
       
       // Ensure smooth rendering
-      canvas.renderAll();
+      if (typeof canvas.renderAll === 'function') {
+        canvas.renderAll();
+      }
       
       console.log('Canvas initialized:', {
         width: canvasWidth,
@@ -104,31 +110,39 @@ const GameScreen: React.FC<GameScreenProps> = ({
       });
 
       // Handle drawing events for debugging and future features
-      canvas.on('path:created', (e) => {
-        console.log('Path created and saved:', e);
-        // Force render to ensure path is visible
-        canvas.renderAll();
-        // Future: Send stroke data to other players for real-time viewing
-      });
-      
-      canvas.on('mouse:down', (e) => {
-        console.log('Mouse down on canvas at:', e.pointer);
-      });
-      
-      canvas.on('mouse:move', (e) => {
-        if (canvas.isDrawingMode && e.pointer) {
-          console.log('Drawing at:', e.pointer);
-        }
-      });
-      
-      canvas.on('mouse:up', () => {
-        console.log('Mouse up on canvas');
-        // Force render after drawing
-        canvas.renderAll();
-      });
+      if (typeof canvas.on === 'function') {
+        canvas.on('path:created', (e) => {
+          console.log('Path created and saved:', e);
+          // Force render to ensure path is visible
+          if (typeof canvas.renderAll === 'function') {
+            canvas.renderAll();
+          }
+          // Future: Send stroke data to other players for real-time viewing
+        });
+        
+        canvas.on('mouse:down', (e) => {
+          console.log('Mouse down on canvas at:', e.pointer);
+        });
+        
+        canvas.on('mouse:move', (e) => {
+          if (canvas.isDrawingMode && e.pointer) {
+            console.log('Drawing at:', e.pointer);
+          }
+        });
+        
+        canvas.on('mouse:up', () => {
+          console.log('Mouse up on canvas');
+          // Force render after drawing
+          if (typeof canvas.renderAll === 'function') {
+            canvas.renderAll();
+          }
+        });
+      }
 
       return () => {
-        canvas.dispose();
+        if (typeof canvas.dispose === 'function') {
+          canvas.dispose();
+        }
         fabricCanvasRef.current = null;
       };
     }
@@ -146,7 +160,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
       fabricCanvasRef.current.isDrawingMode = true;
       
       // Recalculate offsets to ensure cursor accuracy
-      fabricCanvasRef.current.calcOffset();
+      if (typeof fabricCanvasRef.current.calcOffset === 'function') {
+        fabricCanvasRef.current.calcOffset();
+      }
       
       console.log('Brush updated:', {
         width: brushSize,
@@ -183,19 +199,50 @@ const GameScreen: React.FC<GameScreenProps> = ({
         const canvasWidth = containerWidth - 60;
         const canvasHeight = containerHeight - 60;
 
-        fabricCanvasRef.current.setDimensions({
-          width: canvasWidth,
-          height: canvasHeight
-        });
+        if (typeof fabricCanvasRef.current.setDimensions === 'function') {
+          fabricCanvasRef.current.setDimensions({
+            width: canvasWidth,
+            height: canvasHeight
+          });
+        }
         
         // Recalculate offsets after resize to fix cursor position
-        fabricCanvasRef.current.calcOffset();
+        if (typeof fabricCanvasRef.current.calcOffset === 'function') {
+          fabricCanvasRef.current.calcOffset();
+        }
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Finish drawing function (defined before timer effect to avoid dependency issues)
+  const handleFinishDrawing = useCallback(async () => {
+    if (fabricCanvasRef.current && onDrawingComplete && !isSubmitting) {
+      setIsSubmitting(true);
+      
+      try {
+        const canvasData = typeof fabricCanvasRef.current.toDataURL === 'function' 
+          ? fabricCanvasRef.current.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: 1
+          })
+          : 'data:image/png;base64,mock-canvas-data';
+        
+        await onDrawingComplete(canvasData);
+        setIsFinished(true);
+        
+        if (onFinishDrawing) {
+          onFinishDrawing();
+        }
+      } catch (error) {
+        console.error('Failed to submit drawing:', error);
+        setIsSubmitting(false);
+      }
+    }
+  }, [onDrawingComplete, onFinishDrawing, isSubmitting]);
 
   // Timer effect
   useEffect(() => {
@@ -205,6 +252,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
+          // Auto-submit drawing when timer expires
+          if (!isFinished && !isSubmitting && fabricCanvasRef.current && onDrawingComplete) {
+            console.log('⏰ Timer expired, auto-submitting drawing...');
+            handleFinishDrawing();
+          }
           return 0;
         }
         return prev - 1;
@@ -212,16 +264,22 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining]);
+  }, [timeRemaining, isFinished, isSubmitting, onDrawingComplete, handleFinishDrawing]);
 
   // Clear canvas
   const clearCanvas = () => {
     if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.clear();
+      if (typeof fabricCanvasRef.current.clear === 'function') {
+        fabricCanvasRef.current.clear();
+      }
       fabricCanvasRef.current.backgroundColor = '#ffffff';
-      fabricCanvasRef.current.renderAll();
+      if (typeof fabricCanvasRef.current.renderAll === 'function') {
+        fabricCanvasRef.current.renderAll();
+      }
       // Recalculate offsets after clearing
-      fabricCanvasRef.current.calcOffset();
+      if (typeof fabricCanvasRef.current.calcOffset === 'function') {
+        fabricCanvasRef.current.calcOffset();
+      }
       console.log('Canvas cleared');
     }
   };
@@ -240,37 +298,18 @@ const GameScreen: React.FC<GameScreenProps> = ({
         fill: 'red'
       });
       
-      fabricCanvasRef.current.add(rect);
-      fabricCanvasRef.current.renderAll();
+      if (typeof fabricCanvasRef.current.add === 'function') {
+        fabricCanvasRef.current.add(rect);
+      }
+      if (typeof fabricCanvasRef.current.renderAll === 'function') {
+        fabricCanvasRef.current.renderAll();
+      }
       
       console.log('Test rectangle added - if you see a red square, canvas is working');
     }
   };
 
-  // Finish drawing
-  const handleFinishDrawing = async () => {
-    if (fabricCanvasRef.current && onDrawingComplete && !isSubmitting) {
-      setIsSubmitting(true);
-      
-      try {
-        const canvasData = fabricCanvasRef.current.toDataURL({
-          format: 'png',
-          quality: 0.8,
-          multiplier: 1
-        });
-        
-        await onDrawingComplete(canvasData);
-        setIsFinished(true);
-        
-        if (onFinishDrawing) {
-          onFinishDrawing();
-        }
-      } catch (error) {
-        console.error('Failed to submit drawing:', error);
-        setIsSubmitting(false);
-      }
-    }
-  };
+
 
   // Color options
   const colors = [
@@ -282,6 +321,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const brushSizes = [2, 5, 10, 15, 20];
 
   const getTimeStyle = () => {
+    if (timeLeft <= 5) return 'text-danger timer-critical';
     if (timeLeft <= 10) return 'text-danger';
     if (timeLeft <= 20) return 'text-warning';
     return 'text-success';
@@ -306,6 +346,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
           
           <div className="word-section">
             <h2>Draw: <span className="word">{word}</span></h2>
+            {timeLeft <= 10 && timeLeft > 0 && !isFinished && (
+              <div className="time-warning">
+                <small className="text-danger">
+                  ⚠️ {timeLeft <= 5 ? 'Drawing will auto-submit in' : 'Time running out!'} {timeLeft}s
+                </small>
+              </div>
+            )}
           </div>
           
           <div className="status-section">

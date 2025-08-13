@@ -60,6 +60,22 @@ app.use(express.json());
 // Initialize game manager
 const gameManager = new GameManager();
 
+// Set up timer callbacks
+gameManager.setTimerCallbacks({
+  onTimerExpired: (roomCode, gameState) => {
+    console.log(`⏰ Timer expired for room: ${roomCode}, notifying clients`);
+    io.to(roomCode).emit('drawing-time-expired', { gameState });
+  },
+  onJudgingComplete: (roomCode, gameState) => {
+    console.log(`🤖 AI judging complete for room: ${roomCode}`);
+    io.to(roomCode).emit('judging-complete', { gameState });
+  },
+  onJudgingError: (roomCode, error) => {
+    console.error(`❌ AI judging error for room: ${roomCode}:`, error);
+    io.to(roomCode).emit('error', { message: 'AI judging failed' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 

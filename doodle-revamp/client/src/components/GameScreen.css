@@ -492,3 +492,53 @@
     font-size: 0.9rem;
   }
 } 
+/* Ti
+mer critical animation */
+.timer-critical {
+  animation: pulse-red 1s infinite;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+@keyframes pulse-red {
+  0% { 
+    color: #dc3545;
+    text-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+  }
+  50% { 
+    color: #ff6b6b;
+    text-shadow: 0 0 10px rgba(220, 53, 69, 0.8);
+  }
+  100% { 
+    color: #dc3545;
+    text-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+  }
+}
+
+/* Time warning styles */
+.time-warning {
+  margin-top: 5px;
+  animation: shake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(2px); }
+}
+
+/* Auto-submit notification */
+.auto-submit-warning {
+  background-color: rgba(255, 193, 7, 0.9);
+  color: #000;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  text-align: center;
+  font-weight: bold;
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

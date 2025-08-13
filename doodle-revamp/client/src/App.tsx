@@ -6,7 +6,6 @@ import VotingScreen from './components/VotingScreen';
 import GameScreen from './components/GameScreen';
 import TieBreakerModal from './components/TieBreakerModal';
 import ResultsScreen from './components/ResultsScreen';
-import TestUtils from './utils/TestUtils';
 import ConnectionStatus from './components/ConnectionStatus';
 import ErrorModal from './components/ErrorModal';
 import ReconnectionProgress from './components/ReconnectionProgress';
@@ -380,79 +379,6 @@ function App() {
     }));
   };
 
-  // Test simulation functions (moved to DevTools)
-  const simulateTie = (tiedOptions: string[]) => {
-    console.log('🧪 [APP] Simulating tie with options:', tiedOptions);
-    const winningWord = tiedOptions[Math.floor(Math.random() * tiedOptions.length)];
-    setAppState(prev => ({
-      ...prev,
-      showTieBreaker: true,
-      tiedOptions,
-      winningWord
-    }));
-  };
-
-  const simulateVoting = (wordOptions: string[], votes: { [word: string]: number }) => {
-    console.log('🧪 [APP] Simulating voting scenario');
-    const mockGameState: GameState = {
-      roomCode: 'TEST123',
-      isConnected: true,
-      connectionStatus: 'connected',
-      players: [
-        { id: '1', name: 'Test Player 1', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 },
-        { id: '2', name: 'Test Player 2', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 }
-      ],
-      currentPlayer: null,
-      hostId: '1',
-      playerCount: 2,
-      maxPlayers: 8,
-      gamePhase: 'voting',
-      wordOptions,
-      voteCounts: votes,
-      chosenWord: '',
-      timeRemaining: 0,
-      drawingTimeLimit: 60,
-      submittedDrawings: 0,
-      results: []
-    };
-    
-    setAppState(prev => ({
-      ...prev,
-      gameState: mockGameState,
-      currentScreen: 'voting'
-    }));
-  };
-
-  const simulateGameStart = (word: string) => {
-    console.log('🧪 [APP] Simulating game start with word:', word);
-    const mockGameState: GameState = {
-      roomCode: 'TEST123',
-      isConnected: true,
-      connectionStatus: 'connected',
-      players: [
-        { id: '1', name: 'Test Player 1', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 },
-        { id: '2', name: 'Test Player 2', isHost: false, isConnected: true, hasVoted: true, hasSubmittedDrawing: false, score: 0 }
-      ],
-      currentPlayer: null,
-      hostId: '1',
-      playerCount: 2,
-      maxPlayers: 8,
-      gamePhase: 'drawing',
-      wordOptions: [],
-      voteCounts: {},
-      chosenWord: word,
-      timeRemaining: 60,
-      drawingTimeLimit: 60,
-      submittedDrawings: 0,
-      results: []
-    };
-    
-    setAppState(prev => ({
-      ...prev,
-      gameState: mockGameState,
-      currentScreen: 'game'
-    }));
-  };
 
   // DevTools handlers
   const handleShowDevTools = useCallback(() => {
@@ -697,14 +623,6 @@ function App() {
         </button>
       )}
 
-      {/* Development Test Panel - Only show when enabled */}
-      {config.enableTestUtils && (
-        <TestUtils
-          onSimulateTie={simulateTie}
-          onSimulateVoting={simulateVoting}
-          onSimulateGameStart={simulateGameStart}
-        />
-      )}
 
       {/* DevTools Modal - Only show when enabled */}
       {config.enableDevTools && appState.devToolsService && (

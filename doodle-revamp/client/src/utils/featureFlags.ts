@@ -12,7 +12,6 @@ export const FeatureFlags = {
   // Development Features
   get devTools() { return isFeatureEnabled('enableDevTools'); },
   get debugMode() { return isFeatureEnabled('enableDebugMode'); },
-  get testUtils() { return isFeatureEnabled('enableTestUtils'); },
   get mockData() { return isFeatureEnabled('enableMockData'); },
   
   // Performance Features

@@ -32,7 +32,6 @@ export interface ClientConfig {
   enableRealTimeDrawing: boolean;
   
   // Development Features
-  enableTestUtils: boolean;
   enableMockData: boolean;
   autoConnectInDev: boolean;
 }
@@ -68,7 +67,6 @@ const environmentConfigs: Record<Environment, ClientConfig> = {
     enableRealTimeDrawing: true,
     
     // Development Features
-    enableTestUtils: true,
     enableMockData: true,
     autoConnectInDev: false
   },
@@ -100,7 +98,6 @@ const environmentConfigs: Record<Environment, ClientConfig> = {
     enableRealTimeDrawing: true,
     
     // Development Features
-    enableTestUtils: true,
     enableMockData: false,
     autoConnectInDev: false
   },
@@ -132,7 +129,6 @@ const environmentConfigs: Record<Environment, ClientConfig> = {
     enableRealTimeDrawing: true,
     
     // Development Features
-    enableTestUtils: false,
     enableMockData: false,
     autoConnectInDev: false
   },
@@ -164,7 +160,6 @@ const environmentConfigs: Record<Environment, ClientConfig> = {
     enableRealTimeDrawing: false,
     
     // Development Features
-    enableTestUtils: true,
     enableMockData: true,
     autoConnectInDev: false
   }
@@ -227,7 +222,6 @@ export function getConfig(): ClientConfig {
     enableRealTimeDrawing: process.env.REACT_APP_ENABLE_REALTIME_DRAWING === 'true' || baseConfig.enableRealTimeDrawing,
     
     // Development features
-    enableTestUtils: process.env.REACT_APP_ENABLE_TEST_UTILS === 'true' || baseConfig.enableTestUtils,
     enableMockData: process.env.REACT_APP_ENABLE_MOCK_DATA === 'true' || baseConfig.enableMockData,
     autoConnectInDev: process.env.REACT_APP_AUTO_CONNECT_DEV === 'true' || baseConfig.autoConnectInDev
   };

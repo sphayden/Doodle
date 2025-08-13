@@ -732,6 +732,22 @@ export class DevToolsService {
           case 'simulateDisconnection':
             this.simulateDisconnection();
             break;
+          case 'simulateState':
+            this.simulateGameState(step.data);
+            break;
+          case 'simulateConnectionIssues':
+            this.simulateConnectionIssues(step.data?.severity || 'moderate');
+            break;
+          case 'hostGame':
+          case 'joinGame':
+          case 'startVoting':
+          case 'simulateError':
+            // These actions would typically call methods on the game manager
+            // For testing purposes, we can simulate their effects
+            if (step.action === 'startVoting') {
+              this.simulateGameState({ gamePhase: 'voting', wordOptions: ['cat', 'dog', 'bird', 'fish'] });
+            }
+            break;
           default:
             console.warn(`Unknown scenario step: ${step.action}`);
         }

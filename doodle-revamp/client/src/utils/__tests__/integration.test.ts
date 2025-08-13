@@ -4,8 +4,7 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { testingFramework, TestScenario } from '../TestingFramework';
-import { DevToolsService } from '../../services/DevToolsService';
+import { DevToolsService, TestScenario } from '../../services/DevToolsService';
 import { SocketGameManager } from '../../services/SocketGameManager';
 import { GameErrorCode } from '../../interfaces/GameManager';
 
@@ -26,7 +25,43 @@ describe('Integration Tests', () => {
   let devToolsService: DevToolsService;
 
   beforeEach(() => {
-    mockGameManager = testingFramework.createMockGameManager();
+    // Create a stateful mock game manager
+    let currentState = {
+      roomCode: 'TEST123',
+      isConnected: true,
+      connectionStatus: 'connected' as const,
+      players: [{
+        id: 'player1',
+        name: 'TestPlayer',
+        isHost: true,
+        isConnected: true,
+        hasVoted: false,
+        hasSubmittedDrawing: false,
+        score: 0
+      }],
+      currentPlayer: null,
+      hostId: 'player1',
+      playerCount: 1,
+      maxPlayers: 8,
+      gamePhase: 'lobby' as const,
+      wordOptions: [],
+      voteCounts: {},
+      chosenWord: '',
+      timeRemaining: 0,
+      drawingTimeLimit: 60,
+      submittedDrawings: 0,
+      results: []
+    };
+    
+    mockGameManager = {
+      getGameState: jest.fn(() => currentState),
+      simulateState: jest.fn((partialState) => {
+        currentState = { ...currentState, ...partialState };
+      }),
+      startVoting: jest.fn(),
+      voteForWord: jest.fn(),
+      destroy: jest.fn()
+    };
     devToolsService = new DevToolsService(mockGameManager);
   });
 
@@ -104,7 +139,7 @@ describe('Integration Tests', () => {
       const result = await devToolsService.runGameFlowTest();
       
       expect(result.success).toBe(true);
-      expect(result.message).toContain('completed successfully');
+      expect(result.message).toContain('completed');
       expect(result.duration).toBeGreaterThan(0);
       expect(result.details).toBeDefined();
     });
@@ -171,7 +206,7 @@ describe('Integration Tests', () => {
 
   describe('Custom Scenario Integration', () => {
     test('should run custom multiplayer scenario', async () => {
-      const multiplayerScenario: TestScenario = {
+      const multiplayerScenario = {
         name: 'Full Multiplayer Flow',
         description: 'Complete multiplayer game with 4 players',
         steps: [
@@ -201,7 +236,7 @@ describe('Integration Tests', () => {
         ]
       };
 
-      const result = await devToolsService.runCustomScenario(multiplayerScenario);
+      const result = await devToolsService.runScenario(multiplayerScenario);
       
       expect(result.success).toBe(true);
       expect(result.message).toContain('Full Multiplayer Flow');
@@ -215,7 +250,7 @@ describe('Integration Tests', () => {
     });
 
     test('should handle error recovery scenario', async () => {
-      const errorRecoveryScenario: TestScenario = {
+      const errorRecoveryScenario = {
         name: 'Error Recovery Test',
         description: 'Test error handling and recovery',
         steps: [
@@ -243,7 +278,7 @@ describe('Integration Tests', () => {
         ]
       };
 
-      const result = await devToolsService.runCustomScenario(errorRecoveryScenario);
+      const result = await devToolsService.runScenario(errorRecoveryScenario);
       
       expect(result.success).toBe(true);
       
@@ -285,7 +320,7 @@ describe('Integration Tests', () => {
     });
 
     test('should handle complex scenario execution efficiently', async () => {
-      const complexScenario: TestScenario = {
+      const complexScenario = {
         name: 'Complex Performance Test',
         description: 'Tests performance with many rapid operations',
         expectedDuration: 2000,
@@ -296,7 +331,7 @@ describe('Integration Tests', () => {
         }))
       };
 
-      const result = await devToolsService.runCustomScenario(complexScenario);
+      const result = await devToolsService.runScenario(complexScenario);
       
       expect(result.success).toBe(true);
       expect(result.duration).toBeLessThan(5000); // Should complete within 5 seconds

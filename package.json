@@ -1,11 +1,11 @@
 {
-  "name": "doodle-game",
+  "name": "doodle-multiplayer-production",
   "version": "1.0.0",
-  "description": "Doodle multiplayer drawing game - unified startup",
+  "description": "Multiplayer drawing game with AI judging - Production deployment",
+  "main": "server/index.js",
   "scripts": {
-    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
-    "start:server": "cd server && npm start",
-    "start:client": "cd doodle-revamp/client && npm start",
+    "build": "cd doodle-revamp/client && npm ci && npm run build",
+    "start": "cd server && npm ci --production && node index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd doodle-revamp/client && npm start",
@@ -15,14 +15,14 @@
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
     "test:client": "cd doodle-revamp/client && npm test -- --watchAll=false",
-    "build": "npm run build:client",
-    "build:client": "cd doodle-revamp/client && npm run build"
+    "postinstall": "npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x",
+    "npm": ">=8.0.0"
   },
   "keywords": [
     "multiplayer",

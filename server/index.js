@@ -5,6 +5,7 @@ const cors = require('cors');
 const GameManager = require('./gameManager');
 const { getConfig, validateConfig, logCurrentConfig } = require('./config/environment');
 const logger = require('./utils/logger');
+const metricsCollector = require('./utils/metrics');
 
 // Initialize configuration
 const config = getConfig();
@@ -38,6 +39,9 @@ app.use((req, res, next) => {
     const responseTime = Date.now() - startTime;
     logger.logAccess(req, res, responseTime);
     
+    // Record metrics
+    metricsCollector.recordRequest(responseTime, res.statusCode);
+    
     // Log slow requests
     if (responseTime > 1000) {
       logger.warn(`Slow request: ${req.method} ${req.url}`, 'PERFORMANCE', {
@@ -56,6 +60,15 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Serve React build files in production (static files only here)
+if (config.environment === 'production') {
+  const path = require('path');
+  const buildPath = path.join(__dirname, '../doodle-revamp/client/build');
+  
+  // Serve static files
+  app.use(express.static(buildPath));
+}
 
 // Initialize game manager
 const gameManager = new GameManager();
@@ -76,19 +89,93 @@ gameManager.setTimerCallbacks({
   }
 });
 
-// Health check endpoint
+// Health check endpoint with detailed metrics
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    activeRooms: gameManager.getActiveRoomsCount(),
-    totalPlayers: gameManager.getTotalPlayersCount()
-  });
+  try {
+    // Update game metrics
+    metricsCollector.updateGameMetrics(gameManager);
+    
+    const healthStatus = metricsCollector.getHealthStatus();
+    const gameStats = {
+      activeRooms: gameManager.getActiveRoomsCount(),
+      totalPlayers: gameManager.getTotalPlayersCount()
+    };
+    
+    res.json({
+      status: healthStatus.status,
+      timestamp: healthStatus.timestamp,
+      uptime: healthStatus.uptime,
+      ...gameStats,
+      system: healthStatus.system,
+      performance: healthStatus.performance,
+      alerts: healthStatus.alerts
+    });
+  } catch (error) {
+    logger.error('Health check failed', 'HEALTH', { error: error.message });
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed'
+    });
+  }
+});
+
+// Detailed metrics endpoint
+app.get('/metrics', (req, res) => {
+  try {
+    // Update game metrics
+    metricsCollector.updateGameMetrics(gameManager);
+    
+    const metrics = metricsCollector.getMetrics();
+    res.json(metrics);
+  } catch (error) {
+    logger.error('Metrics endpoint failed', 'METRICS', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to retrieve metrics'
+    });
+  }
+});
+
+// System status endpoint
+app.get('/status', (req, res) => {
+  try {
+    const status = {
+      server: {
+        environment: config.environment,
+        uptime: Math.round((Date.now() - Date.now()) / 1000),
+        version: process.env.npm_package_version || '1.0.0',
+        nodeVersion: process.version
+      },
+      game: {
+        activeRooms: gameManager.getActiveRoomsCount(),
+        totalPlayers: gameManager.getTotalPlayersCount(),
+        maxRooms: config.maxRooms,
+        maxPlayersPerRoom: config.maxPlayersPerRoom
+      },
+      features: {
+        aiJudging: config.enableAiJudging,
+        metrics: config.enableMetrics,
+        rateLimiting: config.enableRateLimiting,
+        compression: config.enableCompression
+      }
+    };
+    
+    res.json(status);
+  } catch (error) {
+    logger.error('Status endpoint failed', 'STATUS', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to retrieve status'
+    });
+  }
 });
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
+  
+  // Record connection metrics
+  metricsCollector.recordConnection();
+  logger.networkEvent('connection', socket.id);
 
   // Handle batched messages from client
   socket.on('batch-messages', (data) => {
@@ -362,6 +449,16 @@ io.on('connection', (socket) => {
     });
   });
 });
+
+// Catch-all handler for React Router (must be last)
+if (config.environment === 'production') {
+  const path = require('path');
+  const buildPath = path.join(__dirname, '../doodle-revamp/client/build');
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+}
 
 server.listen(config.port, config.host, () => {
   logger.info(`Server started on ${config.host}:${config.port}`, 'SYSTEM', {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Canvas, PencilBrush, Rect } from 'fabric';
+import { Canvas, PencilBrush } from 'fabric';
 import { Alert, Spinner } from 'react-bootstrap';
 import { GameError } from '../interfaces';
 import './GameScreen.css';

@@ -569,6 +569,39 @@ export interface GameManager {
    */
   sendDrawingStroke(strokeData: any): void;
   
+  /**
+   * Request to play again with the same players
+   * 
+   * This method initiates a "play again" request that allows the current players
+   * to start a new game together. The server will create a new lobby and move
+   * players who want to play again into it. Host privileges are preserved if
+   * the original host wants to play again, otherwise transferred to another player.
+   * 
+   * @returns {Promise<void>} Promise that resolves when play again is processed
+   * @throws {GameError} INVALID_GAME_STATE if not in results phase
+   * @throws {GameError} CONNECTION_FAILED if not connected to server
+   * @throws {GameError} CONNECTION_TIMEOUT if request times out
+   * 
+   * @example
+   * ```typescript
+   * // In results screen, when user clicks "Play Again"
+   * playAgainButton.onclick = async () => {
+   *   try {
+   *     await gameManager.playAgain();
+   *     console.log('Play again request sent');
+   *     // User will either be moved to new lobby or see waiting screen
+   *   } catch (error) {
+   *     if (error.code === 'INVALID_GAME_STATE') {
+   *       console.error('Can only play again from results screen');
+   *     } else {
+   *       console.error('Failed to play again:', error.message);
+   *     }
+   *   }
+   * };
+   * ```
+   */
+  playAgain(): Promise<void>;
+  
   // State Management
   /**
    * Get the current game state

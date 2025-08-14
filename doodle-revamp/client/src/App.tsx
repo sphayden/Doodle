@@ -138,7 +138,7 @@ function App() {
         showErrorModal: true,
         showTieBreaker: false,
         showReconnectionProgress: false,
-        playerName: getSavedPlayerName() // Preserve saved player name
+        playerName: prev.playerName || getSavedPlayerName() // Preserve current session name, fallback to saved
       }));
       
       return; // Don't process further
@@ -163,7 +163,7 @@ function App() {
         showErrorModal: true,
         showTieBreaker: false,
         showReconnectionProgress: false,
-        playerName: getSavedPlayerName() // Preserve saved player name
+        playerName: prev.playerName || getSavedPlayerName() // Preserve current session name, fallback to saved
       }));
       
       return; // Don't process further
@@ -339,7 +339,7 @@ function App() {
       currentScreen: 'start',
       error: '',
       isConnecting: false,
-      playerName: getSavedPlayerName() // Preserve saved player name
+      playerName: prev.playerName || getSavedPlayerName() // Preserve current session name, fallback to saved
     }));
   };
 
@@ -497,6 +497,7 @@ function App() {
           onClearError={clearError}
           isConnecting={appState.isConnecting}
           connectionStatus={appState.connectionStatus}
+          initialPlayerName={appState.playerName}
         />;
       case 'join':
         return (
@@ -577,24 +578,32 @@ function App() {
                 gameManager: null, 
                 gameState: null,
                 connectionStatus: 'disconnected',
-                playerName: getSavedPlayerName() // Preserve saved player name
+                playerName: prev.playerName // Preserve current player name from session
               }));
             }}
-            onPlayAgain={() => {
-              // Reset to lobby for same players to play again
+            onPlayAgain={async () => {
               if (appState.gameManager) {
-                // Could implement play again logic here
-                // For now, just go to new game
-                appState.gameManager.destroy();
+                try {
+                  console.log('🔄 Requesting play again...');
+                  await appState.gameManager.playAgain();
+                  console.log('🔄 Play again request successful');
+                  // The game manager will handle state updates via callbacks
+                  // If successful, user will be moved to new lobby automatically
+                } catch (error) {
+                  console.error('🔄 Play again failed:', error);
+                  // Fallback to new game if play again fails
+                  appState.gameManager.destroy();
+                  setAppState(prev => ({ 
+                    ...prev, 
+                    currentScreen: 'start', 
+                    gameManager: null, 
+                    gameState: null,
+                    connectionStatus: 'disconnected',
+                    playerName: prev.playerName,
+                    error: 'Play again failed. Starting new game.'
+                  }));
+                }
               }
-              setAppState(prev => ({ 
-                ...prev, 
-                currentScreen: 'start', 
-                gameManager: null, 
-                gameState: null,
-                connectionStatus: 'disconnected',
-                playerName: getSavedPlayerName() // Preserve saved player name
-              }));
             }}
           />
         );
@@ -604,6 +613,7 @@ function App() {
           onJoinGame={showJoinGame} 
           error={appState.error}
           onClearError={clearError}
+          initialPlayerName={appState.playerName}
         />;
     }
   };

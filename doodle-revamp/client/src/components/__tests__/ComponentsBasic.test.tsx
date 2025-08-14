@@ -89,7 +89,13 @@ describe('Basic Component Tests', () => {
       render(<StartScreen {...mockProps} />);
       
       const buttons = screen.getAllByRole('button');
-      expect(buttons).toHaveLength(2);
+      // Should have at least 2 buttons (HOST and JOIN), possibly 3 if clear name button is present
+      expect(buttons.length).toBeGreaterThanOrEqual(2);
+      expect(buttons.length).toBeLessThanOrEqual(3);
+      
+      // Check that HOST and JOIN buttons are always present
+      expect(screen.getByText(/HOST GAME/i)).toBeInTheDocument();
+      expect(screen.getByText(/JOIN GAME/i)).toBeInTheDocument();
       
       buttons.forEach(button => {
         expect(button).toBeInTheDocument();

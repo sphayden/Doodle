@@ -4,8 +4,7 @@
  * and automated validation of game logic.
  */
 
-import { DevToolsService, TestResult, ValidationResult, GameScenario } from './DevToolsService';
-import { GameState, Player, GameResult } from '../interfaces/GameManager';
+import { DevToolsService, TestResult } from './DevToolsService';
 import { TEST_SCENARIOS } from './TestScenarios';
 
 export interface TestSuite {

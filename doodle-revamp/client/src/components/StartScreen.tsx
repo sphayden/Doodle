@@ -13,6 +13,7 @@ interface StartScreenProps {
   onClearError: () => void;
   isConnecting?: boolean;
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error';
+  initialPlayerName?: string;
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ 
@@ -21,17 +22,22 @@ const StartScreen: React.FC<StartScreenProps> = ({
   error, 
   onClearError,
   isConnecting = false,
-  connectionStatus = 'disconnected'
+  connectionStatus = 'disconnected',
+  initialPlayerName
 }) => {
   const [playerName, setPlayerName] = useState('');
 
-  // Load saved player name on component mount
+  // Load player name on component mount - prioritize initialPlayerName, then saved name
   useEffect(() => {
-    const savedName = getSavedPlayerName();
-    if (savedName) {
-      setPlayerName(savedName);
+    if (initialPlayerName) {
+      setPlayerName(initialPlayerName);
+    } else {
+      const savedName = getSavedPlayerName();
+      if (savedName) {
+        setPlayerName(savedName);
+      }
     }
-  }, []);
+  }, [initialPlayerName]);
 
   const handleHostGame = () => {
     const finalName = playerName.trim() || generateRandomName();

@@ -5,7 +5,6 @@
  */
 
 import { GameState, Player, GameResult, GameErrorCode, createGameError } from '../interfaces/GameManager';
-// import { testingFramework, TestScenario } from '../utils/TestingFramework'; // Removed - TestingFramework was deleted
 
 export interface TestResult {
   success: boolean;
@@ -356,13 +355,7 @@ export class DevToolsService {
     }
   }
 
-  /**
-   * Run a custom test scenario (TestingFramework removed - use runScenario instead)
-   */
-  async runCustomScenario(scenario: GameScenario): Promise<TestResult> {
-    console.log('⚠️ DevTools: runCustomScenario is deprecated. Use runScenario instead.');
-    return this.runScenario(scenario);
-  }
+
 
   /**
    * Simulate network connection issues

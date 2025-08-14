@@ -16,6 +16,7 @@ import { validatePlayerName, validateRoomCode, validateCanvasData, validateVote 
 import { ErrorHandler } from '../utils/errorHandling';
 import { NetworkResilienceManager } from '../utils/networkResilience';
 import { ErrorRecoveryManager } from '../utils/errorRecovery';
+import { NetworkOptimizationManager } from '../utils/networkOptimization';
 import config from '../config/environment';
 import logger from '../utils/logger';
 import performanceMonitor from '../utils/performanceMonitor';
@@ -121,6 +122,9 @@ export class SocketGameManager implements GameManager {
   private errorHandler: ErrorHandler;
   private networkResilience: NetworkResilienceManager;
   private errorRecovery: ErrorRecoveryManager;
+  
+  // Network optimization
+  private networkOptimization: NetworkOptimizationManager;
 
   constructor(onStateChange: GameStateChangeCallback, tieBreakerCallbacks?: TieBreakerCallbacks) {
     this.onStateChange(onStateChange);
@@ -134,6 +138,21 @@ export class SocketGameManager implements GameManager {
     this.errorHandler = new ErrorHandler();
     this.networkResilience = new NetworkResilienceManager();
     this.errorRecovery = new ErrorRecoveryManager();
+    
+    // Initialize network optimization
+    this.networkOptimization = new NetworkOptimizationManager(
+      (messages) => this.sendBatchedMessages(messages),
+      {
+        maxBatchSize: 10,
+        maxBatchDelay: 100,
+        batchableTypes: ['drawing-stroke', 'cursor-position', 'typing-indicator']
+      },
+      {
+        minCompressionSize: 1024,
+        compressibleTypes: ['submit-drawing', 'game-state-update'],
+        compressionLevel: 6
+      }
+    );
     
     logger.info(`SocketGameManager initialized with server: ${this.serverUrl}`, 'NETWORK');
     this.initializeSocket();
@@ -411,6 +430,31 @@ export class SocketGameManager implements GameManager {
       this.onRealTimeStroke?.(data.playerId, data.strokeData);
     });
 
+    // Handle batched messages from server
+    this.socket.on('batch-messages', (data) => {
+      console.log('📦 Received batched messages:', data.messages?.length || 0);
+      
+      if (data.messages && Array.isArray(data.messages)) {
+        data.messages.forEach((msg: { type: string; data: any }) => {
+          // Process each message in the batch
+          this.socket!.emit(msg.type, msg.data);
+        });
+      }
+    });
+
+    // Handle compressed messages
+    this.socket.on('compressed-message', (compressedMessage) => {
+      try {
+        const decompressedMessage = this.networkOptimization.processIncomingMessage(compressedMessage);
+        console.log('📦 Decompressed message:', decompressedMessage.type);
+        
+        // Re-emit the decompressed message
+        this.socket!.emit(decompressedMessage.type, decompressedMessage.data);
+      } catch (error) {
+        console.error('Failed to decompress message:', error);
+      }
+    });
+
     // Error handling
     this.socket.on('error', (data) => {
       console.error('🚨 Server error:', data.message);
@@ -551,6 +595,51 @@ export class SocketGameManager implements GameManager {
     }
   }
 
+  /**
+   * Send batched messages efficiently
+   */
+  private sendBatchedMessages(messages: NetworkMessage[]): void {
+    if (!this.socket || !this.socket.connected || messages.length === 0) {
+      return;
+    }
+
+    if (messages.length === 1) {
+      // Single message - send directly
+      const message = messages[0];
+      this.socket.emit(message.type, message.data);
+      this.logNetworkMessage(message.type, message.data, 'sent');
+    } else {
+      // Multiple messages - send as batch
+      const batchData = {
+        messages: messages.map(msg => ({ type: msg.type, data: msg.data })),
+        timestamp: Date.now()
+      };
+      
+      this.socket.emit('batch-messages', batchData);
+      this.logNetworkMessage('batch-messages', { count: messages.length, types: messages.map(m => m.type) }, 'sent');
+      
+      // Log individual messages for debugging
+      messages.forEach(msg => {
+        this.logNetworkMessage(msg.type, msg.data, 'sent');
+      });
+    }
+  }
+
+  /**
+   * Send an optimized message through the network optimization layer
+   */
+  private sendOptimizedMessage(type: string, data: any): void {
+    const message: NetworkMessage = {
+      type,
+      data,
+      timestamp: new Date(),
+      direction: 'sent'
+    };
+
+    // Process through optimization layer
+    this.networkOptimization.processOutgoingMessage(message);
+  }
+
   // GameManager Interface Implementation
 
   async hostGame(playerName: string): Promise<string> {
@@ -632,8 +721,7 @@ export class SocketGameManager implements GameManager {
             this.socket!.once('connect', () => {
               console.log('🔌 Connected to server, creating room...');
               const message = { playerName };
-              this.socket!.emit('create-room', message);
-              this.logNetworkMessage('create-room', message, 'sent');
+              this.sendOptimizedMessage('create-room', message);
               console.log('📤 Sent create-room message:', message);
             });
 
@@ -645,8 +733,7 @@ export class SocketGameManager implements GameManager {
               // Already connected, emit immediately
               console.log('🔌 Already connected, creating room immediately...');
               const message = { playerName };
-              this.socket!.emit('create-room', message);
-              this.logNetworkMessage('create-room', message, 'sent');
+              this.sendOptimizedMessage('create-room', message);
               console.log('📤 Sent create-room message:', message);
             }
           });
@@ -709,8 +796,7 @@ export class SocketGameManager implements GameManager {
         // Wait for connection then join room
         this.socket!.once('connect', () => {
           const message = { roomCode, playerName };
-          this.socket!.emit('join-room', message);
-          this.logNetworkMessage('join-room', message, 'sent');
+          this.sendOptimizedMessage('join-room', message);
         });
 
         // Timeout after 10 seconds
@@ -758,8 +844,7 @@ export class SocketGameManager implements GameManager {
       }
 
       const message = { roomCode: this.currentRoomCode };
-      this.socket.emit('start-voting', message);
-      this.logNetworkMessage('start-voting', message, 'sent');
+      this.sendOptimizedMessage('start-voting', message);
     } catch (error) {
       this.handleError(error as GameError);
     }
@@ -781,8 +866,7 @@ export class SocketGameManager implements GameManager {
       }
 
       const message = { roomCode: this.currentRoomCode, word };
-      this.socket.emit('vote-word', message);
-      this.logNetworkMessage('vote-word', message, 'sent');
+      this.sendOptimizedMessage('vote-word', message);
     } catch (error) {
       this.handleError(error as GameError);
     }
@@ -802,8 +886,7 @@ export class SocketGameManager implements GameManager {
       }
 
       const message = { roomCode: this.currentRoomCode, canvasData };
-      this.socket.emit('submit-drawing', message);
-      this.logNetworkMessage('submit-drawing', { roomCode: this.currentRoomCode, canvasDataSize: canvasData.length }, 'sent');
+      this.sendOptimizedMessage('submit-drawing', message);
     } catch (error) {
       this.handleError(error as GameError);
     }
@@ -860,11 +943,42 @@ export class SocketGameManager implements GameManager {
 
   // Connection Management
   disconnect(): void {
+    // Flush any pending optimizations
+    this.networkOptimization.flush();
+    
     if (this.socket) {
       this.socket.disconnect();
       this.connectionStatus = 'disconnected';
       this.logNetworkMessage('disconnect', {}, 'sent');
     }
+  }
+
+  /**
+   * Cleanup all resources and connections
+   */
+  destroy(): void {
+    this.isDestroyed = true;
+    this.clearTimers();
+    
+    // Cleanup network optimization
+    this.networkOptimization.destroy();
+    
+    // Disconnect socket
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    
+    // Clear callbacks
+    this.stateChangeCallbacks.clear();
+    this.errorCallbacks.clear();
+    
+    // Clear state
+    this.gameState = null;
+    this.networkMessages = [];
+    
+    logger.info('SocketGameManager destroyed', 'NETWORK');
   }
 
   getConnectionStatus(): 'connecting' | 'connected' | 'disconnected' | 'error' {
@@ -929,38 +1043,115 @@ export class SocketGameManager implements GameManager {
     this.onAutoSubmitRequired = callback;
   }
 
-  destroy(): void {
-    this.isDestroyed = true;
-    this.clearTimers();
-    
-    // Cleanup enhanced error handling
-    this.networkResilience.destroy();
-    this.errorRecovery.destroy();
-    
-    // Disconnect gracefully
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      if (this.socket.connected) {
-        this.socket.disconnect();
-      }
-      this.socket = null;
+  /**
+   * Request to play again with the same players
+   */
+  async playAgain(): Promise<void> {
+    if (!this.socket) {
+      throw createGameError(
+        GameErrorCode.CONNECTION_FAILED,
+        'Cannot play again: not connected to server'
+      );
     }
+
+    if (!this.currentRoomCode) {
+      throw createGameError(
+        GameErrorCode.INVALID_ROOM_CODE,
+        'Cannot play again: no active room'
+      );
+    }
+
+    if (this.gameState?.gamePhase !== 'results') {
+      throw createGameError(
+        GameErrorCode.INVALID_GAME_STATE,
+        'Can only play again from results screen'
+      );
+    }
+
+    logger.info('Requesting play again', 'GAME', { roomCode: this.currentRoomCode });
     
-    // Clear all callbacks and state
-    this.stateChangeCallbacks.clear();
-    this.errorCallbacks.clear();
-    this.networkMessages = [];
-    this.gameState = null;
-    this.lastError = null;
-    this.tieBreakerCallbacks = null;
-    
-    // Reset connection state
-    this.connectionStatus = 'disconnected';
-    this.reconnectAttempts = 0;
-    this.currentRoomCode = '';
-    this.playerName = '';
-    this.isHostPlayer = false;
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(createGameError(
+          GameErrorCode.CONNECTION_TIMEOUT,
+          'Play again request timed out'
+        ));
+      }, 10000); // 10 second timeout
+
+      // Handle successful lobby creation
+      const handleLobbyCreated = (data: any) => {
+        console.log('🔄 [CLIENT] Play again lobby created event received:', data);
+        console.log('🔄 [CLIENT] Current socket ID:', this.socket?.id);
+        console.log('🔄 [CLIENT] New host ID:', data.gameState?.hostId);
+        
+        clearTimeout(timeout);
+        this.socket?.off('play-again-lobby-created', handleLobbyCreated);
+        this.socket?.off('play-again-waiting', handleWaiting);
+        this.socket?.off('error', handleError);
+
+        console.log('🔄 [CLIENT] Updating game state with new room:', data.newRoomCode);
+        
+        // Update room code and game state
+        this.currentRoomCode = data.newRoomCode;
+        this.gameState = data.gameState;
+        this.isHostPlayer = data.gameState.hostId === this.socket?.id;
+        
+        console.log('🔄 [CLIENT] Updated room code:', this.currentRoomCode);
+        console.log('🔄 [CLIENT] Is host:', this.isHostPlayer);
+        console.log('🔄 [CLIENT] Game state phase:', this.gameState?.gamePhase);
+        
+        // Notify state change callbacks
+        this.stateChangeCallbacks.forEach(callback => {
+          try {
+            callback(this.gameState!);
+          } catch (error) {
+            console.error('Error in state change callback:', error);
+          }
+        });
+
+        resolve();
+      };
+
+      // Handle waiting for more players
+      const handleWaiting = (data: any) => {
+        console.log('🔄 [CLIENT] Waiting for more players to play again:', data);
+        console.log('🔄 [CLIENT] Players ready:', data.playersReady, '/', data.totalPlayers);
+        console.log('🔄 [CLIENT] Players needed:', data.playersNeeded);
+        
+        // For now, we'll resolve immediately and let the UI handle the waiting state
+        // In the future, we could add a callback for waiting state updates
+        clearTimeout(timeout);
+        this.socket?.off('play-again-lobby-created', handleLobbyCreated);
+        this.socket?.off('play-again-waiting', handleWaiting);
+        this.socket?.off('error', handleError);
+        resolve();
+      };
+
+      // Handle errors
+      const handleError = (error: any) => {
+        clearTimeout(timeout);
+        this.socket?.off('play-again-lobby-created', handleLobbyCreated);
+        this.socket?.off('play-again-waiting', handleWaiting);
+        this.socket?.off('error', handleError);
+        
+        reject(createGameError(
+          GameErrorCode.UNKNOWN_ERROR,
+          error.message || 'Play again request failed'
+        ));
+      };
+
+      // Set up event listeners (use on instead of once for reliability)
+      this.socket?.on('play-again-lobby-created', handleLobbyCreated);
+      this.socket?.on('play-again-waiting', handleWaiting);
+      this.socket?.on('error', handleError);
+
+      // Send play again request
+      this.socket?.emit('play-again', { roomCode: this.currentRoomCode });
+      this.logNetworkMessage('play-again', { roomCode: this.currentRoomCode }, 'sent');
+    });
   }
+
+
 
 
   // Legacy methods for backward compatibility
@@ -1064,5 +1255,19 @@ export class SocketGameManager implements GameManager {
    */
   getSocket(): Socket | null {
     return this.socket;
+  }
+
+  /**
+   * DevTools: Get network optimization statistics
+   */
+  getNetworkStats(): any {
+    return this.networkOptimization.getStats();
+  }
+
+  /**
+   * DevTools: Flush all pending network optimizations
+   */
+  flushNetworkOptimizations(): void {
+    this.networkOptimization.flush();
   }
 }

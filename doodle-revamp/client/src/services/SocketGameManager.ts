@@ -74,6 +74,9 @@ export class SocketGameManager implements GameManager {
   /** Callbacks for handling tie-breaker scenarios */
   private tieBreakerCallbacks: TieBreakerCallbacks | null = null;
   
+  /** Callback for auto-submit when timer expires */
+  private onAutoSubmitRequired: (() => void) | null = null;
+  
   /** Name of the current player */
   private playerName: string = '';
   
@@ -94,7 +97,7 @@ export class SocketGameManager implements GameManager {
   private reconnectAttempts: number = 0;
   
   /** Maximum number of reconnection attempts before giving up */
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = 3;
   
   /** Current delay between reconnection attempts (increases exponentially) */
   private reconnectDelay: number = 2000; // Start with 2 seconds
@@ -152,10 +155,15 @@ export class SocketGameManager implements GameManager {
   private attemptReconnection() {
     if (this.isDestroyed || this.reconnectAttempts >= this.maxReconnectAttempts) {
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.log(`❌ Maximum reconnection attempts (${this.maxReconnectAttempts}) reached, returning to main screen`);
         this.handleError(createGameError(
           GameErrorCode.CONNECTION_FAILED,
-          'Maximum reconnection attempts reached',
-          { attempts: this.reconnectAttempts, maxAttempts: this.maxReconnectAttempts },
+          `Unable to reconnect after ${this.maxReconnectAttempts} attempts. Please check your connection and try again.`,
+          { 
+            attempts: this.reconnectAttempts, 
+            maxAttempts: this.maxReconnectAttempts,
+            shouldReturnToMainScreen: true 
+          },
           false
         ));
       }
@@ -378,7 +386,17 @@ export class SocketGameManager implements GameManager {
     });
 
     this.socket.on('drawing-time-expired', (data) => {
-      console.log('⏰ Drawing time expired, starting judging');
+      console.log('🔥 RECEIVED drawing-time-expired event from server');
+      console.log('🔥 Auto-submit callback available:', !!this.onAutoSubmitRequired);
+      
+      // Trigger auto-submit callback if available
+      if (this.onAutoSubmitRequired) {
+        console.log('🔥 Calling auto-submit callback...');
+        this.onAutoSubmitRequired();
+      } else {
+        console.warn('🔥 No auto-submit callback set!');
+      }
+      
       this.updateGameState(data.gameState);
     });
 
@@ -396,7 +414,37 @@ export class SocketGameManager implements GameManager {
     // Error handling
     this.socket.on('error', (data) => {
       console.error('🚨 Server error:', data.message);
-      this.onError?.(data.message);
+      
+      // Handle room not found errors (server restart scenario)
+      if (data.message && data.message.includes('Room not found')) {
+        console.log('🏠 Room no longer exists (server may have restarted), clearing local state');
+        
+        // Clear local state and return to start screen
+        this.currentRoomCode = '';
+        this.isHostPlayer = false;
+        this.gameState = null;
+        this.lastError = null;
+        
+        // Create a specific error for room not found
+        const roomNotFoundError = createGameError(
+          GameErrorCode.ROOM_NOT_FOUND,
+          'The game room no longer exists. The server may have restarted.',
+          { originalMessage: data.message },
+          false // Not recoverable - user needs to create/join a new room
+        );
+        
+        this.handleError(roomNotFoundError);
+      } else {
+        // Handle other errors normally
+        const genericError = createGameError(
+          GameErrorCode.UNKNOWN_ERROR,
+          data.message || 'An unknown server error occurred',
+          { originalMessage: data.message },
+          true
+        );
+        
+        this.handleError(genericError);
+      }
     });
   }
 
@@ -872,6 +920,13 @@ export class SocketGameManager implements GameManager {
 
   setTieBreakerCallbacks(callbacks: TieBreakerCallbacks): void {
     this.tieBreakerCallbacks = callbacks;
+  }
+
+  /**
+   * Set callback for auto-submit when timer expires
+   */
+  setAutoSubmitCallback(callback: () => void): void {
+    this.onAutoSubmitRequired = callback;
   }
 
   destroy(): void {

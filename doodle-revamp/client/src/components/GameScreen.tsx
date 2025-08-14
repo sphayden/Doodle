@@ -244,6 +244,30 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }
   }, [onDrawingComplete, onFinishDrawing, isSubmitting]);
 
+  // Set up global auto-submit function for server-triggered auto-submit
+  useEffect(() => {
+    console.log('🔥 Setting up GameScreen auto-submit function');
+    (window as any).gameScreenAutoSubmit = () => {
+      console.log('🔥 GameScreen auto-submit called!');
+      console.log('🔥 isFinished:', isFinished, 'isSubmitting:', isSubmitting);
+      console.log('🔥 fabricCanvasRef.current:', !!fabricCanvasRef.current);
+      console.log('🔥 onDrawingComplete:', !!onDrawingComplete);
+      
+      if (!isFinished && !isSubmitting) {
+        console.log('🔥 Conditions met, calling handleFinishDrawing...');
+        handleFinishDrawing();
+      } else {
+        console.warn('🔥 Auto-submit conditions not met!');
+      }
+    };
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔥 Cleaning up GameScreen auto-submit function');
+      delete (window as any).gameScreenAutoSubmit;
+    };
+  }, [handleFinishDrawing, isFinished, isSubmitting, onDrawingComplete]);
+
   // Timer effect
   useEffect(() => {
     setTimeLeft(timeRemaining);
@@ -284,30 +308,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }
   };
 
-  // Test drawing function
-  const testDrawing = () => {
-    if (fabricCanvasRef.current) {
-      console.log('Testing canvas drawing capability...');
-      
-      // Add a test rectangle to verify canvas is working
-      const rect = new Rect({
-        left: 100,
-        top: 100,
-        width: 50,
-        height: 50,
-        fill: 'red'
-      });
-      
-      if (typeof fabricCanvasRef.current.add === 'function') {
-        fabricCanvasRef.current.add(rect);
-      }
-      if (typeof fabricCanvasRef.current.renderAll === 'function') {
-        fabricCanvasRef.current.renderAll();
-      }
-      
-      console.log('Test rectangle added - if you see a red square, canvas is working');
-    }
-  };
+
 
 
 
@@ -491,16 +492,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                 🗑️ Clear
               </button>
               
-              <button 
-                className="tool-btn test-btn"
-                onClick={testDrawing}
-                disabled={isFinished || isSubmitting}
-                style={{ background: '#ffc107', color: '#000' }}
-                title="Test canvas functionality"
-              >
-                🧪 Test Canvas
-              </button>
-              
+
               <button 
                 className="tool-btn finish-btn"
                 onClick={handleFinishDrawing}

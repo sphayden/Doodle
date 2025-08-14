@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Spinner } from 'react-bootstrap';
 import AnimatedBackground from './AnimatedBackground';
 import NotificationModal from './NotificationModal';
 import { generateRandomName } from '../utils/nameGenerator';
+import { getSavedPlayerName, savePlayerName, clearSavedPlayerName } from '../utils/userStorage';
 import './StartScreen.css';
 
 interface StartScreenProps {
@@ -24,13 +25,29 @@ const StartScreen: React.FC<StartScreenProps> = ({
 }) => {
   const [playerName, setPlayerName] = useState('');
 
+  // Load saved player name on component mount
+  useEffect(() => {
+    const savedName = getSavedPlayerName();
+    if (savedName) {
+      setPlayerName(savedName);
+    }
+  }, []);
+
   const handleHostGame = () => {
     const finalName = playerName.trim() || generateRandomName();
+    // Save the player name for future use
+    if (finalName) {
+      savePlayerName(finalName);
+    }
     onHostGame(finalName);
   };
 
   const handleJoinGame = () => {
     const finalName = playerName.trim() || generateRandomName();
+    // Save the player name for future use
+    if (finalName) {
+      savePlayerName(finalName);
+    }
     onJoinGame(finalName);
   };
 
@@ -75,16 +92,32 @@ const StartScreen: React.FC<StartScreenProps> = ({
 
             {/* Combined Name Input and Game Options Section */}
             <div className="start-game-section">
-              <Form.Control
-                type="text"
-                placeholder="Enter your name (optional)"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                onKeyPress={handleKeyPress}
-                maxLength={15}
-                className="name-input mb-4"
-                size="lg"
-              />
+              <div className="name-input-container mb-4">
+                <Form.Control
+                  type="text"
+                  placeholder="Enter your name (optional)"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  maxLength={15}
+                  className="name-input"
+                  size="lg"
+                />
+                {playerName && (
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="clear-name-btn"
+                    onClick={() => {
+                      setPlayerName('');
+                      clearSavedPlayerName();
+                    }}
+                    title="Clear saved name"
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
               
               <p className="helper-text mb-4">
                 {playerName.trim() 

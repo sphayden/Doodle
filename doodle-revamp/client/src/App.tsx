@@ -21,6 +21,7 @@ import {
   GameErrorCode 
 } from './interfaces';
 import { SocketGameManager } from './services/SocketGameManager';
+import { getSavedPlayerName } from './utils/userStorage';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -59,7 +60,7 @@ function App() {
 
   const [appState, setAppState] = useState<AppState>({
     currentScreen: 'start',
-    playerName: '',
+    playerName: getSavedPlayerName(), // Initialize with saved player name
     gameManager: null,
     gameState: null,
     isHost: false,
@@ -119,6 +120,55 @@ function App() {
   const handleGameError = useCallback((error: GameError) => {
     console.error('Game error:', error);
     
+    // Handle room not found errors (server restart scenario)
+    if (error.code === GameErrorCode.ROOM_NOT_FOUND) {
+      console.log('🏠 Room not found - resetting to start screen');
+      
+      // Reset app state to start screen
+      setAppState(prev => ({
+        ...prev,
+        currentScreen: 'start',
+        gameState: null,
+        gameManager: null,
+        devToolsService: null,
+        roomCode: '',
+        error: error.message,
+        isConnecting: false,
+        connectionStatus: 'disconnected',
+        showErrorModal: true,
+        showTieBreaker: false,
+        showReconnectionProgress: false,
+        playerName: getSavedPlayerName() // Preserve saved player name
+      }));
+      
+      return; // Don't process further
+    }
+    
+    // Handle max reconnection attempts reached
+    if (error.code === GameErrorCode.CONNECTION_FAILED && 
+        error.details?.shouldReturnToMainScreen) {
+      console.log('🔄 Max reconnection attempts reached - resetting to start screen');
+      
+      // Reset app state to start screen
+      setAppState(prev => ({
+        ...prev,
+        currentScreen: 'start',
+        gameState: null,
+        gameManager: null,
+        devToolsService: null,
+        roomCode: '',
+        error: error.message,
+        isConnecting: false,
+        connectionStatus: 'disconnected',
+        showErrorModal: true,
+        showTieBreaker: false,
+        showReconnectionProgress: false,
+        playerName: getSavedPlayerName() // Preserve saved player name
+      }));
+      
+      return; // Don't process further
+    }
+    
     // Update state with error and show modal for serious errors
     setAppState(prev => ({
       ...prev,
@@ -164,6 +214,19 @@ function App() {
       
       // Set up error handling
       gameManager.onError(handleGameError);
+      
+      // Set up auto-submit callback (will be set by GameScreen component)
+      gameManager.setAutoSubmitCallback(() => {
+        console.log('🔥 Auto-submit callback triggered by server timer expiration');
+        console.log('🔥 GameScreen auto-submit available:', !!(window as any).gameScreenAutoSubmit);
+        // The GameScreen component will set up the actual auto-submit logic
+        if ((window as any).gameScreenAutoSubmit) {
+          console.log('🔥 Calling GameScreen auto-submit...');
+          (window as any).gameScreenAutoSubmit();
+        } else {
+          console.warn('🔥 GameScreen auto-submit not available!');
+        }
+      });
       
       // Initialize DevTools service
       const devToolsService = new DevToolsService(gameManager);
@@ -230,6 +293,15 @@ function App() {
       // Set up error handling
       gameManager.onError(handleGameError);
       
+      // Set up auto-submit callback (will be set by GameScreen component)
+      gameManager.setAutoSubmitCallback(() => {
+        console.log('⏰ Auto-submit triggered by server timer expiration');
+        // The GameScreen component will set up the actual auto-submit logic
+        if ((window as any).gameScreenAutoSubmit) {
+          (window as any).gameScreenAutoSubmit();
+        }
+      });
+      
       // Initialize DevTools service
       const devToolsService = new DevToolsService(gameManager);
       gameManager.setDevToolsService?.(devToolsService);
@@ -266,7 +338,8 @@ function App() {
       ...prev,
       currentScreen: 'start',
       error: '',
-      isConnecting: false
+      isConnecting: false,
+      playerName: getSavedPlayerName() // Preserve saved player name
     }));
   };
 
@@ -503,7 +576,8 @@ function App() {
                 currentScreen: 'start', 
                 gameManager: null, 
                 gameState: null,
-                connectionStatus: 'disconnected'
+                connectionStatus: 'disconnected',
+                playerName: getSavedPlayerName() // Preserve saved player name
               }));
             }}
             onPlayAgain={() => {
@@ -518,7 +592,8 @@ function App() {
                 currentScreen: 'start', 
                 gameManager: null, 
                 gameState: null,
-                connectionStatus: 'disconnected'
+                connectionStatus: 'disconnected',
+                playerName: getSavedPlayerName() // Preserve saved player name
               }));
             }}
           />

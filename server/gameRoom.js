@@ -232,7 +232,9 @@ class GameRoom {
       if (this.timeRemaining <= 0) {
         clearInterval(this.drawingTimer);
         this.drawingTimer = null;
-        this.startJudging();
+        
+        // Start grace period instead of immediately judging
+        this.startAutoSubmitGracePeriod();
         
         // Emit timer expired event so server can handle judging
         if (this.onTimerExpired) {
@@ -275,19 +277,38 @@ class GameRoom {
       this.drawingTimer = null;
     }
     
-    // Auto-submit empty drawings for players who haven't submitted
+    this.gamePhase = 'judging';
+    this.timeRemaining = 0;
+  }
+
+  /**
+   * Start auto-submit grace period (keeps drawing phase active for client auto-submit)
+   */
+  startAutoSubmitGracePeriod() {
+    if (this.drawingTimer) {
+      clearInterval(this.drawingTimer);
+      this.drawingTimer = null;
+    }
+    
+    // Keep in drawing phase but set time to 0
+    this.timeRemaining = 0;
+    console.log(`⏰ Starting auto-submit grace period for room: ${this.roomCode}`);
+  }
+
+  /**
+   * Auto-submit empty drawings for players who haven't submitted (fallback)
+   * This should be called after giving clients a chance to auto-submit
+   */
+  autoSubmitMissingDrawings() {
     for (const [playerId, player] of this.players.entries()) {
       if (!player.hasSubmittedDrawing) {
-        console.log(`⏰ Auto-submitting empty drawing for player: ${player.name} (${playerId})`);
-        // Submit an empty/blank canvas data
+        console.log(`⏰ Auto-submitting empty drawing for player: ${player.name} (${playerId}) - no client submission received`);
+        // Submit an empty/blank canvas data as fallback
         const emptyCanvasData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
         this.drawings.set(playerId, emptyCanvasData);
         player.hasSubmittedDrawing = true;
       }
     }
-    
-    this.gamePhase = 'judging';
-    this.timeRemaining = 0;
   }
 
   /**

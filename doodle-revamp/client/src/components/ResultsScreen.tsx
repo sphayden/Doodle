@@ -147,10 +147,16 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
           </div>
 
           {/* Results Grid */}
-          <div className="results-grid">
-            {gameState.results
-              .sort((a, b) => a.rank - b.rank)
-              .map((result, index) => (
+          <div className="results-grid-container">
+            {gameState.results && gameState.results.length > 3 && (
+              <div className="scroll-hint">
+                <span>← Scroll to see all results →</span>
+              </div>
+            )}
+            <div className="results-grid">
+              {gameState.results
+                .sort((a, b) => a.rank - b.rank)
+                .map((result, index) => (
                 <div
                   key={result.playerId}
                   className={`result-card ${
@@ -229,8 +235,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({
                     </div>
 
                   </div>
-                </div>
-              ))}
+                  </div>
+                ))}
+            </div>
           </div>
 
           {/* Action Buttons */}

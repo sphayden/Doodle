@@ -3,8 +3,9 @@
 .results-screen {
   background-color: #0b63af;
   position: relative;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -18,7 +19,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100vh;
 }
 
 /* Header Section */
@@ -124,15 +125,63 @@
   100% { transform: rotate(360deg) scale(1); }
 }
 
-/* Results Grid */
+/* Results Grid - Horizontal Scrolling Layout */
 .results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: clamp(10px, 2vw, 20px);
+  display: flex;
+  gap: clamp(15px, 2vw, 25px);
   margin-bottom: clamp(15px, 3vh, 25px);
   flex: 1;
-  overflow-y: auto;
-  padding-right: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: clamp(10px, 2vh, 20px) 0;
+  scroll-behavior: smooth;
+  
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Results Grid Container */
+.results-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow shrinking */
+}
+
+/* Scroll Hint */
+.scroll-hint {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  margin-bottom: 10px;
+  animation: fadeIn 1s ease-in-out 2s both;
+}
+
+.scroll-hint span {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 15px;
+  border-radius: 15px;
+  backdrop-filter: blur(5px);
+}
+
+.results-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.results-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.results-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.results-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Result Cards */
@@ -146,6 +195,11 @@
   opacity: 0;
   transform: translateY(50px) scale(0.9);
   position: relative;
+  
+  /* Fixed width for horizontal scrolling */
+  min-width: clamp(280px, 25vw, 350px);
+  max-width: clamp(280px, 25vw, 350px);
+  flex-shrink: 0;
 }
 
 .result-card.visible {
@@ -355,6 +409,7 @@
   text-align: center;
   margin-top: clamp(15px, 2vh, 25px);
   flex-shrink: 0;
+  padding-bottom: clamp(10px, 2vh, 20px);
 }
 
 .action-buttons {
@@ -529,6 +584,15 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .results-screen {
@@ -540,13 +604,13 @@
   }
   
   .results-grid {
-    grid-template-columns: 1fr;
     gap: clamp(10px, 2vw, 15px);
+    padding: clamp(8px, 1.5vh, 15px) 0;
   }
   
   .result-card {
-    margin: 0 auto;
-    max-width: 400px;
+    min-width: clamp(250px, 70vw, 300px);
+    max-width: clamp(250px, 70vw, 300px);
   }
   
   .action-buttons {
@@ -602,12 +666,13 @@
 
 @media (max-width: 400px) {
   .results-grid {
-    grid-template-columns: 1fr;
     gap: 15px;
+    padding: 10px 0;
   }
   
   .result-card {
-    max-width: 100%;
+    min-width: clamp(220px, 80vw, 280px);
+    max-width: clamp(220px, 80vw, 280px);
   }
   
   .score-circle {
@@ -624,8 +689,13 @@
 /* Large screens optimization */
 @media (min-width: 1200px) {
   .results-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: clamp(15px, 2vw, 25px);
+    gap: clamp(20px, 2vw, 30px);
+    padding: clamp(15px, 2vh, 25px) 0;
+  }
+  
+  .result-card {
+    min-width: clamp(320px, 22vw, 380px);
+    max-width: clamp(320px, 22vw, 380px);
   }
   
   .results-container {
@@ -635,9 +705,13 @@
 
 @media (min-width: 1600px) {
   .results-grid {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 1200px;
-    margin: 0 auto;
+    gap: clamp(25px, 2vw, 35px);
+    justify-content: center;
+  }
+  
+  .result-card {
+    min-width: 350px;
+    max-width: 350px;
   }
 }
 
@@ -660,10 +734,16 @@
   }
 }
 
-/* Short screens - compress everything */
+/* Short screens - compress everything and ensure buttons are visible */
 @media (max-height: 700px) {
+  .results-screen {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
   .results-container {
     padding: clamp(5px, 1vh, 10px);
+    min-height: 100vh;
   }
   
   .results-header {
@@ -684,12 +764,26 @@
     font-size: clamp(0.9rem, 2vw, 1.1rem);
   }
   
+  .results-grid-container {
+    flex: 0 1 auto;
+  }
+  
+  .results-grid {
+    padding: clamp(5px, 1vh, 10px) 0;
+    margin-bottom: clamp(5px, 1vh, 10px);
+  }
+  
   .drawing-preview {
     height: clamp(80px, 10vh, 120px);
   }
   
+  .result-card-inner {
+    padding: clamp(8px, 1.5vw, 12px);
+  }
+  
   .action-section {
     margin-top: clamp(8px, 1vh, 15px);
+    padding-bottom: clamp(10px, 2vh, 20px);
   }
   
   .action-buttons {
@@ -698,5 +792,100 @@
   
   .game-stats {
     padding: clamp(8px, 1.5vw, 12px);
+  }
+}
+
+/* Extra short screens - even more aggressive compression */
+@media (max-height: 600px) {
+  .results-screen {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .results-container {
+    padding: 5px;
+    min-height: 100vh;
+  }
+  
+  .results-header {
+    margin-bottom: 5px;
+  }
+  
+  .logo-responsive {
+    width: clamp(60px, 10vw, 100px);
+    margin-bottom: 3px;
+  }
+  
+  .results-title {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    margin-bottom: 2px;
+  }
+  
+  .results-subtitle {
+    font-size: clamp(0.8rem, 1.8vw, 1rem);
+  }
+  
+  .results-grid {
+    padding: 5px 0;
+    margin-bottom: 5px;
+  }
+  
+  .drawing-preview {
+    height: clamp(60px, 8vh, 100px);
+  }
+  
+  .result-card-inner {
+    padding: 8px;
+  }
+  
+  .score-circle {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .score-number {
+    font-size: 1rem;
+  }
+  
+  .score-label {
+    font-size: 0.7rem;
+  }
+  
+  .feedback-bubble {
+    padding: 8px;
+  }
+  
+  .feedback-text {
+    font-size: 0.8rem;
+  }
+  
+  .action-section {
+    margin-top: 10px;
+    padding-bottom: 15px;
+  }
+  
+  .action-buttons {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  
+  .action-btn {
+    padding: 6px 15px !important;
+    font-size: 0.9rem !important;
+    min-width: 100px;
+    min-height: 35px;
+  }
+  
+  .game-stats {
+    padding: 8px;
+    gap: 15px;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .stat-value {
+    font-size: 1rem;
   }
 }

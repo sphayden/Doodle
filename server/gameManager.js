@@ -207,31 +207,39 @@ class GameManager {
       return;
     }
     
-    if (room.gamePhase !== 'judging') {
-      console.error(`Room ${roomCode} not in judging phase when timer expired, current phase: ${room.gamePhase}`);
+    if (room.gamePhase !== 'drawing') {
+      console.error(`Room ${roomCode} not in drawing phase when timer expired, current phase: ${room.gamePhase}`);
       return;
     }
     
-    // Notify that timer expired and judging is starting
+    // Notify clients that timer expired (they should auto-submit their current drawings)
     if (this.onTimerExpired) {
       this.onTimerExpired(roomCode, room.getGameState());
     }
     
-    // Start AI judging automatically
-    try {
-      console.log(`🤖 Starting AI judging for room: ${roomCode} after timer expiration`);
-      const finalGameState = await this.startAIJudging(roomCode);
-      
-      // Notify that judging is complete
-      if (this.onJudgingComplete) {
-        this.onJudgingComplete(roomCode, finalGameState);
+    // Give clients 3 seconds to auto-submit their current drawings
+    setTimeout(async () => {
+      try {
+        // Now transition to judging phase
+        room.startJudging();
+        
+        // Auto-submit empty drawings for any players who still haven't submitted
+        room.autoSubmitMissingDrawings();
+        
+        console.log(`🤖 Starting AI judging for room: ${roomCode} after timer expiration and auto-submit grace period`);
+        const finalGameState = await this.startAIJudging(roomCode);
+        
+        // Notify that judging is complete
+        if (this.onJudgingComplete) {
+          this.onJudgingComplete(roomCode, finalGameState);
+        }
+      } catch (error) {
+        console.error(`Error during AI judging for room ${roomCode}:`, error);
+        if (this.onJudgingError) {
+          this.onJudgingError(roomCode, error);
+        }
       }
-    } catch (error) {
-      console.error(`Error during AI judging for room ${roomCode}:`, error);
-      if (this.onJudgingError) {
-        this.onJudgingError(roomCode, error);
-      }
-    }
+    }, 3000); // 3 second grace period for client auto-submit
   }
 
   /**

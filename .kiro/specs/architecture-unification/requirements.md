@@ -116,3 +116,45 @@ Note: The `Doodle` folder contains legacy C# ASP.NET code that is for reference 
 5. WHEN running automated tests THEN there SHALL be test utilities that can verify game logic without UI interaction
 6. WHEN testing edge cases THEN there SHALL be tools to simulate network failures, disconnections, and error conditions
 7. WHEN validating functionality THEN there SHALL be automated checks that verify game state consistency across all players
+
+### Requirement 10
+
+**User Story:** As a system administrator, I want the application to handle high traffic loads with multiple concurrent lobbies, so that the game remains responsive and stable under heavy usage.
+
+#### Acceptance Criteria
+
+1. WHEN there are 100+ concurrent lobbies THEN the system SHALL maintain response times under 2 seconds
+2. WHEN server memory usage exceeds 80% THEN the system SHALL implement graceful degradation or scaling
+3. WHEN multiple players join simultaneously THEN the system SHALL handle concurrent connections without race conditions
+4. WHEN traffic spikes occur THEN the system SHALL auto-scale or queue requests appropriately
+5. WHEN a server instance fails THEN active games SHALL be preserved or gracefully transferred
+6. WHEN monitoring the system THEN there SHALL be metrics for active rooms, player count, memory usage, and response times
+7. WHEN the system reaches capacity limits THEN new room creation SHALL be throttled with appropriate user feedback
+
+### Requirement 11
+
+**User Story:** As a developer, I want a production-ready deployment strategy with proper environment configuration, so that the application can be reliably deployed and maintained in production.
+
+#### Acceptance Criteria
+
+1. WHEN deploying to production THEN the system SHALL serve both frontend and backend from a single domain
+2. WHEN configuring environments THEN all sensitive data SHALL be stored in environment variables
+3. WHEN the application starts THEN it SHALL validate all required configuration and fail fast if misconfigured
+4. WHEN deploying updates THEN there SHALL be zero-downtime deployment capabilities
+5. WHEN errors occur in production THEN they SHALL be logged with appropriate detail for debugging
+6. WHEN scaling is needed THEN the deployment SHALL support horizontal scaling with load balancing
+7. WHEN monitoring production THEN there SHALL be health checks and performance metrics available
+
+### Requirement 12
+
+**User Story:** As a developer, I want the system architecture to support distributed scaling with shared state management, so that multiple server instances can work together seamlessly.
+
+#### Acceptance Criteria
+
+1. WHEN running multiple server instances THEN game state SHALL be shared across all instances
+2. WHEN a player connects THEN they SHALL be able to join games hosted on any server instance
+3. WHEN implementing WebSocket clustering THEN sticky sessions SHALL be properly configured
+4. WHEN storing game data THEN it SHALL persist beyond individual server instance lifecycles
+5. WHEN a server instance restarts THEN active games SHALL continue on other instances
+6. WHEN implementing caching THEN frequently accessed data SHALL be cached for performance
+7. WHEN cleaning up resources THEN expired games and disconnected players SHALL be automatically removed

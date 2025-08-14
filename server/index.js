@@ -90,6 +90,21 @@ app.get('/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
+  // Handle batched messages from client
+  socket.on('batch-messages', (data) => {
+    console.log(`📦 Received batched messages from ${socket.id}:`, data.messages?.length || 0);
+    
+    if (data.messages && Array.isArray(data.messages)) {
+      // Process each message in the batch
+      data.messages.forEach((msg) => {
+        if (msg.type && msg.data) {
+          // Re-emit each message as if it came individually
+          socket.emit(msg.type, msg.data);
+        }
+      });
+    }
+  });
+
   // Room management
   socket.on('create-room', async (data) => {
     console.log(`🎮 Create room request from ${socket.id}:`, data);
@@ -270,6 +285,68 @@ io.on('connection', (socket) => {
       playerId: socket.id,
       strokeData
     });
+  });
+
+  // Play again functionality
+  socket.on('play-again', async (data) => {
+    try {
+      const { roomCode } = data;
+      console.log(`🔄 Play again request from ${socket.id} in room ${roomCode}`);
+      
+      const result = await gameManager.handlePlayAgain(roomCode, socket.id);
+      
+      if (result.success) {
+        // New room created - move players to new lobby
+        const { newRoomCode, gameState, playersJoined, newHost } = result;
+        
+        // Remove players from old room and add to new room
+        socket.leave(roomCode);
+        socket.join(newRoomCode);
+        
+        // Notify this player they're in the new lobby
+        socket.emit('play-again-lobby-created', {
+          newRoomCode,
+          gameState,
+          newHost
+        });
+        
+        // Notify other players who wanted to play again
+        for (const player of playersJoined) {
+          if (player.id !== socket.id) {
+            const playerSocket = io.sockets.sockets.get(player.id);
+            if (playerSocket && playerSocket.connected) {
+              console.log(`🔄 Moving player ${player.name} (${player.id}) to new lobby ${newRoomCode}`);
+              playerSocket.leave(roomCode);
+              playerSocket.join(newRoomCode);
+              playerSocket.emit('play-again-lobby-created', {
+                newRoomCode,
+                gameState,
+                newHost
+              });
+            } else {
+              console.warn(`🔄 Player ${player.name} (${player.id}) socket not found or disconnected`);
+            }
+          }
+        }
+        
+        console.log(`🔄 Successfully created play-again lobby ${newRoomCode} with ${playersJoined.length} players`);
+      } else {
+        // Still waiting for more players
+        socket.emit('play-again-waiting', result);
+        
+        // Notify other players in the room about the updated count
+        socket.to(roomCode).emit('play-again-status-update', {
+          playersReady: result.playersReady,
+          totalPlayers: result.totalPlayers,
+          playersNeeded: result.playersNeeded
+        });
+        
+        console.log(`🔄 Play again waiting: ${result.playersReady}/${result.totalPlayers} players ready`);
+      }
+    } catch (error) {
+      console.error('Error handling play again:', error);
+      socket.emit('error', { message: error.message });
+    }
   });
 
   // Disconnect handling

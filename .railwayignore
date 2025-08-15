@@ -1,0 +1,16 @@
+# Ignore legacy C# .NET project
+Doodle/
+Doodle.sln
+*.csproj
+*.cs
+packages/
+bin/
+obj/
+
+# Ignore other non-production files
+docs/
+*.md
+!README.md
+.git/
+.vscode/
+.DS_Store

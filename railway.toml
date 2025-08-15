@@ -4,6 +4,15 @@ builder = "nixpacks"
 [[build.env]]
 NIXPACKS_PLAN_PROVIDERS = "node"
 
+[[build.env]]
+NIXPACKS_NODE_VERSION = "18"
+
+[[build.env]]
+NIXPACKS_BUILD_CMD = "npm run build"
+
+[[build.env]]
+NIXPACKS_START_CMD = "npm start"
+
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300

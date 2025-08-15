@@ -4,8 +4,8 @@
   "description": "Multiplayer drawing game with AI judging - Production deployment",
   "main": "server/index.js",
   "scripts": {
-    "build": "cd doodle-revamp/client && npm ci && npm run build",
-    "start": "cd server && npm ci --production && node index.js",
+    "build": "cd doodle-revamp/client && npm ci && npm run build && cd ../.. && cd server && npm ci --production",
+    "start": "cd server && node index.js",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd doodle-revamp/client && npm start",

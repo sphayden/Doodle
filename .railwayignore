@@ -1,11 +1,16 @@
-# Ignore legacy C# .NET project
+# Ignore legacy C# .NET project completely
 Doodle/
 Doodle.sln
 *.csproj
+*.csproj.user
 *.cs
 packages/
 bin/
 obj/
+*.config
+*.asax
+*.dll
+*.pdb
 
 # Ignore other non-production files
 docs/
@@ -13,4 +18,7 @@ docs/
 !README.md
 .git/
 .vscode/
+.vs/
 .DS_Store
+node_modules/
+*.log
